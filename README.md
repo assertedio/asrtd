@@ -1,5 +1,7 @@
 # asrtd
 
+![asserted logo](https://raw.githubusercontent.com/assertedio/asrtd/master/logo.png)
+
 asserted.io command line interface
 
 Test in prod. Continously integration test your app with tests written in Mocha.

@@ -1,0 +1,13 @@
+{
+  "interval": {
+    "unit": "hr",
+    "value": 5
+  },
+  "mocha": {
+    "files": ["**/*.not-asrtd.js"],
+    "ignore": [],
+    "bail": false,
+    "ui": "require"
+  },
+  "timeoutSec": 1
+}

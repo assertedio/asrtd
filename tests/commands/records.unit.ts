@@ -1,0 +1,92 @@
+import { expect } from 'chai';
+import sinon from 'sinon';
+
+import { Records } from '../../src/commands/records';
+import feedback from '../../src/lib/services/feedback';
+
+const defaultServices = {
+  interactions: {} as any,
+  localRunner: {} as any,
+  routinePacker: {} as any,
+  api: {} as any,
+  routineConfigs: {} as any,
+  feedback: {} as any,
+};
+
+const curDate = new Date('2018-01-01T00:00:00.000Z');
+
+describe('records unit tests', () => {
+  beforeEach(() => sinon.restore());
+
+  it('records without routine', async () => {
+    const services = {
+      ...defaultServices,
+      interactions: {
+        routines: {
+          selectRoutine: sinon.stub().resolves({ id: 'selected-routine-id' }),
+        },
+      } as any,
+      api: {
+        records: {
+          search: sinon.stub().resolves({ list: [{ id: 'some-record' }], prevBefore: curDate, nextAfter: curDate }),
+        },
+      } as any,
+      feedback: sinon.stub({ ...feedback }),
+    };
+
+    sinon.stub(Records, 'getRecordsTable').returns([['foo']]);
+    const results = new Records(services);
+
+    await results.records(false, { searchThing: true } as any);
+
+    expect((Records.getRecordsTable as any).args).to.eql([[[{ id: 'some-record' }]]]);
+    expect(services.feedback.noIdent.callCount).to.eql(1);
+    expect(services.feedback.note.callCount).to.eql(2);
+    expect(services.interactions.routines.selectRoutine.callCount).to.eql(1);
+    expect(services.api.records.search.args).to.eql([['selected-routine-id', { searchThing: true }]]);
+  });
+
+  it('records no passes', async () => {
+    const services = {
+      ...defaultServices,
+      interactions: {
+        routines: {
+          selectRoutine: sinon.stub().resolves({ id: 'selected-routine-id' }),
+        },
+      } as any,
+      api: {
+        records: {
+          search: sinon.stub().resolves({
+            list: [
+              { id: 'id-1', completedAt: true },
+              { id: 'id-2', status: 'passed', completedAt: true },
+              { id: 'id-3', status: 'passed', completedAt: true },
+              { id: 'id-4', completedAt: true },
+            ],
+            prevBefore: curDate,
+            nextAfter: curDate,
+          }),
+        },
+      } as any,
+      feedback: sinon.stub({ ...feedback }),
+    };
+
+    sinon.stub(Records, 'getRecordsTable').returns([['foo']]);
+    const results = new Records(services);
+
+    await results.records(false, { searchThing: true } as any);
+    expect((Records.getRecordsTable as any).args).to.eql([
+      [
+        [
+          { id: 'id-4', completedAt: true },
+          { start: true, end: true },
+          { id: 'id-1', completedAt: true },
+        ],
+      ],
+    ]);
+    expect(services.feedback.noIdent.callCount).to.eql(1);
+    expect(services.feedback.note.callCount).to.eql(2);
+    expect(services.interactions.routines.selectRoutine.callCount).to.eql(1);
+    expect(services.api.records.search.args).to.eql([['selected-routine-id', { searchThing: true }]]);
+  });
+});

@@ -1,6 +1,6 @@
 # asrtd
 
-![asserted logo](https://raw.githubusercontent.com/assertedio/asrtd/master/logo-dark.png)
+![asserted logo](https://raw.githubusercontent.com/assertedio/asrtd/master/images/logo-dark.png)
 
 asserted.io command line interface
 
@@ -58,6 +58,22 @@ To see the current status of the routine associated with the current directory, 
 ```bash
 asrtd status
 ```
+
+To get a timeline of the how the status has changed recently, run:
+
+```bash
+asrtd timeline
+```
+
+To get a list of recent records, run:
+
+```bash
+asrtd records
+```
+
+![asrtd records](https://raw.githubusercontent.com/assertedio/asrtd/master/images/records.png)
+
+
 
 # Commands
 

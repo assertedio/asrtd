@@ -2,9 +2,9 @@
 
 ![asserted logo](https://raw.githubusercontent.com/assertedio/asrtd/master/images/logo-dark.png)
 
-asserted.io command line interface
+[asserted.io](https://asserted.io) command line interface
 
-Test in prod. Continously integration test your app with tests written in Mocha.
+Test in prod. Continously integration test your app with tests written in [Mocha](https://mochajs.org/).
 
 ## Installation
 
@@ -38,6 +38,8 @@ Create some tests inside `.asserted/` (or modify the tests in `examples/`), then
 asrtd run
 ```
 
+![asrtd records](https://raw.githubusercontent.com/assertedio/asrtd/master/images/local.png)
+
 By default, test files should be suffixed with `.asrtd.js` to be picked up by Mocha, but that can be configured in `routine.json`.
 
 ## Push to asserted.io
@@ -59,11 +61,15 @@ To see the current status of the routine associated with the current directory, 
 asrtd status
 ```
 
+![asrtd records](https://raw.githubusercontent.com/assertedio/asrtd/master/images/status.png)
+
 To get a timeline of the how the status has changed recently, run:
 
 ```bash
 asrtd timeline
 ```
+
+![asrtd records](https://raw.githubusercontent.com/assertedio/asrtd/master/images/timeline.png)
 
 To get a list of recent records, run:
 
@@ -78,3 +84,57 @@ asrtd records
 # Commands
 
 At any time you can run `asrtd --help` to get a list of available commands.
+
+![asrtd records](https://raw.githubusercontent.com/assertedio/asrtd/master/images/help.png)
+
+
+# Included Dependencies
+
+For the moment, the dependencies available to tests are fixed, though we expect to support custom dependencies in the future.
+
+## Major libraries
+
+mocha - [NPM](http://npmjs.com/package/mocha) - [Docs](https://mochajs.org/)
+chai - [NPM](https://www.npmjs.com/package/chai) - [Docs](https://www.chaijs.com/)
+sinon - [NPM](https://www.npmjs.com/package/sinon) - [Docs](https://sinonjs.org/)
+axios = [NPM](https://www.npmjs.com/package/axios) - [Docs](https://www.npmjs.com/package/axios)
+lodash - [NPM](https://www.npmjs.com/package/lodash) - [Docs](https://lodash.com/)
+
+## All Available Dependencies
+
+```json
+{
+    "ajv": "^6.12.2",
+    "async": "^3.2.0",
+    "axios": "^0.19.2",
+    "bcrypt": "^4.0.1",
+    "bluebird": "^3.7.2",
+    "chai": "^4.2.0",
+    "cookie": "^0.4.1",
+    "crypto-js": "^4.0.0",
+    "dotenv": "^8.2.0",
+    "faker": "^4.1.0",
+    "fs-extra": "^9.0.0",
+    "getenv": "^1.0.0",
+    "got": "^11.1.3",
+    "http-status": "^1.4.2",
+    "ip": "^1.1.5",
+    "jsdom": "^16.2.2",
+    "jsonwebtoken": "^8.5.1",
+    "lodash": "^4.17.15",
+    "luxon": "^1.24.1",
+    "mocha": "^7.1.2",
+    "moment": "^2.25.3",
+    "ms": "^2.1.2",
+    "node-fetch": "^2.6.0",
+    "qs": "^6.9.4",
+    "ramda": "^0.27.0",
+    "request": "^2.88.2",
+    "request-promise": "^4.2.5",
+    "sinon": "^9.0.2",
+    "tar": "^6.0.2",
+    "underscore": "^1.10.2",
+    "uuid": "^8.0.0",
+    "validator": "^13.0.0"
+}
+```

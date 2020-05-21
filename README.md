@@ -1,6 +1,6 @@
 # asrtd
 
-![asserted logo](https://raw.githubusercontent.com/assertedio/asrtd/master/logo.png)
+![asserted logo](https://raw.githubusercontent.com/assertedio/asrtd/master/logo-dark.png)
 
 asserted.io command line interface
 

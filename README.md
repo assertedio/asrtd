@@ -94,11 +94,11 @@ For the moment, the dependencies available to tests are fixed, though we expect 
 
 ## Major libraries
 
-mocha - [NPM](http://npmjs.com/package/mocha) - [Docs](https://mochajs.org/)
-chai - [NPM](https://www.npmjs.com/package/chai) - [Docs](https://www.chaijs.com/)
-sinon - [NPM](https://www.npmjs.com/package/sinon) - [Docs](https://sinonjs.org/)
-axios = [NPM](https://www.npmjs.com/package/axios) - [Docs](https://www.npmjs.com/package/axios)
-lodash - [NPM](https://www.npmjs.com/package/lodash) - [Docs](https://lodash.com/)
+- mocha - [NPM](http://npmjs.com/package/mocha) - [Docs](https://mochajs.org/)
+- chai - [NPM](https://www.npmjs.com/package/chai) - [Docs](https://www.chaijs.com/)
+- sinon - [NPM](https://www.npmjs.com/package/sinon) - [Docs](https://sinonjs.org/)
+- axios = [NPM](https://www.npmjs.com/package/axios) - [Docs](https://www.npmjs.com/package/axios)
+- lodash - [NPM](https://www.npmjs.com/package/lodash) - [Docs](https://lodash.com/)
 
 ## All Available Dependencies
 

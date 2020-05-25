@@ -17,7 +17,7 @@
   "dependencies": {
     "@asserted/models": "^9.1.2",
     "@asserted/pack": "^2.1.3",
-    "@asserted/runner": "^3.0.1",
+    "@asserted/runner": "^3.0.2",
     "alce": "^1.2.0",
     "auto-bind": "^4.0.0",
     "axios": "^0.19.2",

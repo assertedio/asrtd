@@ -28,8 +28,8 @@ export class Auth {
    * @param {any} options
    */
   async login(options): Promise<void> {
-    const { open, tokenStdin } = options.opts();
-    await this.services.commands.auth.login(open, tokenStdin);
+    const { open, tokenStdin, hidden } = options.opts();
+    await this.services.commands.auth.login(open, tokenStdin, hidden);
   }
 
   /**

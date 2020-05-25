@@ -4,6 +4,9 @@ import terminalLink from 'terminal-link';
 
 import { FeedbackInterface } from '../lib/services/feedback';
 import { GlobalConfig } from '../lib/services/globalConfig';
+import logger from '../logger';
+
+const log = logger('auth');
 
 export interface ServicesInterface {
   globalConfig: GlobalConfig;
@@ -35,9 +38,10 @@ export class Auth {
    * Take token from prompt
    *
    * @param {boolean} openBrowser
+   * @param {boolean} hidden
    * @returns {string}
    */
-  async login(openBrowser: boolean): Promise<string> {
+  async login(openBrowser: boolean, hidden: boolean): Promise<string> {
     const registerUrl = new URL(`${this.config.appHost}/tokens`).toString();
     this.services.feedback.info(terminalLink(`Login here and create a token: ${registerUrl}`, registerUrl), 'blueBright');
 
@@ -45,9 +49,14 @@ export class Auth {
       await open(registerUrl);
     }
 
+    if (process.platform === 'win32') {
+      log('Cannot use hidden input on windows');
+      hidden = false;
+    }
+
     const loginResponse = await inquirer.prompt([
       {
-        type: 'password',
+        type: hidden ? 'password' : 'input',
         name: 'token',
         message: 'Paste token here',
       },

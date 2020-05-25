@@ -1,7 +1,9 @@
 import axios, { AxiosInstance, AxiosStatic } from 'axios';
 import Err from 'err';
 import { isObject } from 'lodash';
+import osName from 'os-name';
 
+import pjson from '../../../package.json';
 import logger from '../../logger';
 import { GlobalConfig } from '../services/globalConfig';
 
@@ -33,7 +35,12 @@ export const isErrorResponse = (input: any | ApiErrorResponseInterface): input i
 export const getInstance = (globalConfig: GlobalConfig, apiHost: string, axiosFactory: AxiosStatic = axios): AxiosInstance => {
   const axiosInstance = axiosFactory.create({
     baseURL: apiHost,
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      asrtd: pjson.version,
+      nodejs: process.version.replace('v', ''),
+      platform: `${osName()}; ${process.arch}`,
+    },
   });
 
   axiosInstance.interceptors.request.use(
@@ -44,7 +51,7 @@ export const getInstance = (globalConfig: GlobalConfig, apiHost: string, axiosFa
 
       if (config?.headers?.Authorization || config?.headers?.authorization) {
         log('Auth header already set');
-      } else if (currentToken) {
+      } else if (currentToken && currentToken.length > 0) {
         log(`Using token: ${currentToken}`);
         config.headers.Authorization = `Bearer ${currentToken}`;
       } else {

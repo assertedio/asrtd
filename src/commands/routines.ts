@@ -192,7 +192,7 @@ export class Routines {
       {
         dependencies,
         scripts: {
-          prepare: 'mkdir -p node_modules',
+          prepare: 'npx mkdirp node_modules',
         },
       },
       { spaces: 2 }

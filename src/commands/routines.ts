@@ -162,6 +162,7 @@ export class Routines {
    */
   async initialize(params: InitParametersInterface): Promise<void> {
     const { examples, install } = params;
+    const { merge } = params;
     let { projectId, name, description, intervalValue, intervalUnit } = params;
 
     await this.services.interactions.auth.ensureAuth();
@@ -198,7 +199,7 @@ export class Routines {
       { spaces: 2 }
     );
 
-    if (examples) {
+    if (examples && !merge) {
       debug(`Copying all template files to: ${this.config.assertedDir}`);
       await fs.copy(TEMPLATES_PATH, this.config.assertedDir);
     } else {

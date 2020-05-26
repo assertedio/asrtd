@@ -40,18 +40,21 @@ export class Init {
    */
   static async generateRoutineName(assertedDir: string): Promise<string> {
     const pjsonPath = path.join(assertedDir, '../package.json');
+    const parentDirPath = path.basename(path.join(assertedDir, '../'));
 
     const stats = await fs.stat(pjsonPath).catch(() => null);
-    let pjsonName = null;
+    let projectName = null as string | null;
     if (stats && stats.isFile()) {
       try {
-        pjsonName = JSON.parse(await fs.readFile(pjsonPath, 'utf8')).name;
+        projectName = JSON.parse(await fs.readFile(pjsonPath, 'utf8')).name;
       } catch {
-        pjsonName = null;
+        projectName = null;
       }
     }
 
-    return pjsonName || uniqueNamesGenerator({ separator: ' ', length: 2, dictionaries: [adjectives, starWars], style: 'lowerCase' });
+    projectName = projectName || parentDirPath.length > 0 ? parentDirPath : null;
+
+    return projectName || uniqueNamesGenerator({ separator: ' ', length: 2, dictionaries: [adjectives, starWars], style: 'lowerCase' });
   }
 
   /* eslint-disable class-methods-use-this */

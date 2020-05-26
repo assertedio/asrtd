@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosStatic } from 'axios';
 import Err from 'err';
+import HTTP_STATUS from 'http-status';
 import { isObject } from 'lodash';
 import osName from 'os-name';
 
@@ -97,6 +98,10 @@ export function defaultApiError<T extends NumberArray>(noNotifyCodes: NumberArra
   return (error: Err): T extends MoreThanOneNumberArray ? ApiErrorResponseInterface : never => {
     if (error.code && noNotifyCodes.includes(error.code)) {
       return { ...error.data, _error: { code: error.code, message: error.message } };
+    }
+
+    if (error.code && (error.code === HTTP_STATUS.UNAUTHORIZED || error.code === HTTP_STATUS.FORBIDDEN)) {
+      throw new Error(`${HTTP_STATUS[error.code]}: try explicitly setting the project ID or re-running \`asrtd login\``);
     }
 
     throw error;

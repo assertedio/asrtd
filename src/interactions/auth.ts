@@ -74,5 +74,6 @@ export class Auth {
     if (!this.services.globalConfig.getApiKey()) {
       throw new Error('Authentication token not found. Please run: `asrtd login`');
     }
+    log('auth token found');
   }
 }

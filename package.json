@@ -1,7 +1,7 @@
 {
   "name": "asrtd",
   "description": "asserted.io client",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "author": "Eric Hacke",
   "bin": {
     "asrtd": "./dist/src/asrtd.js"

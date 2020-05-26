@@ -2,6 +2,7 @@ import inquirer from 'inquirer';
 import open from 'open';
 import terminalLink from 'terminal-link';
 
+import { Api } from '../lib/services/api';
 import { FeedbackInterface } from '../lib/services/feedback';
 import { GlobalConfig } from '../lib/services/globalConfig';
 import logger from '../logger';
@@ -11,6 +12,7 @@ const log = logger('auth');
 export interface ServicesInterface {
   globalConfig: GlobalConfig;
   feedback: FeedbackInterface;
+  api: Api;
 }
 
 export interface ConfigInterface {
@@ -75,5 +77,6 @@ export class Auth {
       throw new Error('Authentication token not found. Please run: `asrtd login`');
     }
     log('auth token found');
+    await this.services.api.auth.verifyKey(this.services.globalConfig.getApiKey());
   }
 }

@@ -24,7 +24,7 @@ process.on('unhandledRejection' as any, listener);
     const { actions, services } = new ServiceManager(config);
 
     let program = new commander.Command();
-    program = cli(program, actions, services, config);
+    program = await cli(program, actions, services, config);
 
     program.parse(process.argv);
 

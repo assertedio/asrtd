@@ -12,10 +12,25 @@ import records from './records';
 import routines from './routines';
 import stats from './stats';
 
-export default (program: commander.Command, actions: ActionsInterface, services: ServicesInterface, config: ConfigInterface): commander.Command => {
+export default async (
+  program: commander.Command,
+  actions: ActionsInterface,
+  services: ServicesInterface,
+  config: ConfigInterface
+): Promise<commander.Command> => {
   const logo = chalk.bold.greenBright(figlet.textSync('asserted.io'));
 
   const { version, appHost } = config;
+
+  let status;
+
+  if (!services.globalConfig.getApiKey()) {
+    status = chalk.red('No token. Run `asrtd login`');
+  } else {
+    status = (await services.api.auth.verifyKey(services.globalConfig.getApiKey()))
+      ? chalk.green('Authenticated')
+      : chalk.red('Invalid token. Run `asrtd login`');
+  }
 
   program
     .storeOptionsAsProperties(false)
@@ -31,7 +46,7 @@ export default (program: commander.Command, actions: ActionsInterface, services:
       
       Version: ${version}
       
-      Authentication Status: ${services.globalConfig.getApiKey() ? chalk.green('Authenticated') : chalk.red('Not authenticated')}`
+      Authentication Status: ${status}`
     );
 
   auth(program, actions);

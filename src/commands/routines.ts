@@ -202,9 +202,11 @@ export class Routines {
     if (examples && !merge) {
       debug(`Copying all template files to: ${this.config.assertedDir}`);
       await fs.copy(TEMPLATES_PATH, this.config.assertedDir);
+      // This is really dumb, but for some reason, NPM auto-renames .gitignore to .npmignore. So this is a workaround
+      await fs.move(path.join(this.config.assertedDir, 'gitignore'), path.join(this.config.assertedDir, '.gitignore'));
     } else {
       this.services.feedback.warn('Skipping copy of example tests');
-      await fs.copy(path.join(TEMPLATES_PATH, '.gitignore'), path.join(this.config.assertedDir, '.gitignore'));
+      await fs.copy(path.join(TEMPLATES_PATH, 'gitignore'), path.join(this.config.assertedDir, '.gitignore'));
     }
 
     if (install) {

@@ -95,6 +95,7 @@
   },
   "files": [
     "dist/**/*.{js,ts,tsbuildinfo}",
+    "dist/src/commands/templates/*.*",
     "docs/**/*.*"
   ],
   "homepage": "https://github.com/asserted/asrtd#readme",

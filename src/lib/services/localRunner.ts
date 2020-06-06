@@ -73,7 +73,7 @@ export class LocalRunner {
       const completedRunRecord = new CompletedRunRecord({ ...runRecord, ...RunRecord.getPatchFromResult(testResult) });
       await fs.remove(outputPath);
       return completedRunRecord;
-    } catch (error) {
+    } catch {
       await fs.remove(outputPath).catch((error_) => log(`error while removing tmp dir: ${error_.message}`));
       return null;
     }

@@ -1,3 +1,4 @@
+/* eslint-disable mocha/max-top-level-suites */
 import {
   INTERVAL_UNITS,
   Routine,
@@ -12,6 +13,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import sinon from 'sinon';
 
+import chalk from 'chalk';
 import { Routines } from '../../src/commands/routines';
 import { OVERWRITE_ROUTINE } from '../../src/interactions/init';
 import feedback from '../../src/lib/services/feedback';
@@ -35,6 +37,10 @@ const defaultServices = {
 const curDate = new Date('2018-01-01T00:00:00.000Z');
 
 describe('routine command units', () => {
+  before(() => {
+    chalk.level = 3;
+  });
+
   beforeEach(async () => {
     await fs.remove(OUTPUT_DIR);
     await fs.ensureDir(OUTPUT_DIR);

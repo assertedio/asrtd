@@ -37,11 +37,9 @@ export class Config extends ValidatedBase implements ConfigInterface {
   @IsString()
   version: string;
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
   @IsUrl({ require_tld: false }) // This allows localhost urls
   apiHost: string;
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
   @IsUrl({ require_tld: false }) // This allows localhost urls
   appHost: string;
 

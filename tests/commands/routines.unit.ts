@@ -50,7 +50,7 @@ describe('routine command units', () => {
   after(() => sinon.restore());
 
   it('run npm install', async function () {
-    this.timeout(10000);
+    this.timeout(20000);
 
     const assertedDir = path.join(OUTPUT_DIR, '.asserted');
 

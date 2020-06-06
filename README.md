@@ -1,5 +1,11 @@
 # asrtd
 
+![npm](https://img.shields.io/npm/v/asrtd)
+![install size](https://badgen.net/packagephobia/install/asrtd)
+![Codecov](https://img.shields.io/codecov/c/gh/assertedio/asrtd)
+![CircleCI](https://img.shields.io/circleci/build/github/assertedio/asrtd)
+![GitHub](https://img.shields.io/github/license/assertedio/asrtd)
+
 ![asserted logo](https://raw.githubusercontent.com/assertedio/asrtd/master/images/logo-dark.png)
 
 [asserted.io](https://asserted.io) command line interface

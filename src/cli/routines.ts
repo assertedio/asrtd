@@ -79,7 +79,7 @@ export default (program: commander.Command, actions: ActionsInterface): commande
     .description(`run routine once - defaults to local run ${chalk.grey('(options override routine config)')}`)
     .option('--files [glob or list]', 'files to include in test run')
     .option('-i, --ignore [glob or list]', 'files to ignore during test run')
-    .option('--no-bail', "don't stop on the first failure", false)
+    .option('--bail', 'stop on the first failure', false)
     .option('--online', `run routine online ${chalk.grey('(does not overwrite currently pushed routine)')}`)
     .option('--pushed [routineId]', `immediately run pushed routine ${chalk.grey('(does not trigger notifications and is not recorded)')}`)
     .action(actions.routines.run);

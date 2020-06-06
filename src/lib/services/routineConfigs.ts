@@ -58,7 +58,7 @@ export class RoutineConfigs {
 
       try {
         parsedRoutine = alce.parse(await fs.readFile(this.getPath()));
-      } catch (error) {
+      } catch {
         throw new Error(`Could not parse: ${path.join(ROUTINE_FILENAME)}`);
       }
 

@@ -1,4 +1,3 @@
-/* eslint-disable mocha/max-top-level-suites */
 import {
   INTERVAL_UNITS,
   Routine,

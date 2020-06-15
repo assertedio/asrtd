@@ -1,4 +1,4 @@
-import { ValidatedBase } from '@asserted/models';
+import { ValidatedBase } from 'validated-base';
 import { IsString, IsUrl } from 'class-validator';
 
 export interface ConfigInterface {

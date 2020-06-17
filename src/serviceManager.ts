@@ -1,5 +1,5 @@
 import { Runner } from '@asserted/runner';
-import { AxiosInstance } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { exec, execSync } from 'child_process';
 import Conf from 'conf';
 
@@ -19,6 +19,7 @@ import { GlobalConfig } from './lib/services/globalConfig';
 import { LocalRunner } from './lib/services/localRunner';
 import { RoutineConfigs } from './lib/services/routineConfigs';
 import { RoutinePacker } from './lib/services/routinePacker';
+import { Updater } from './lib/services/updater';
 
 export interface ServicesInterface {
   runner: Runner;
@@ -31,6 +32,7 @@ export interface ServicesInterface {
   commands: Commands;
   globalConfig: GlobalConfig;
   feedback: FeedbackInterface;
+  updater: Updater;
 }
 
 export interface ActionsInterface {
@@ -103,7 +105,10 @@ export class ServiceManager {
       { appHost, assertedDir }
     );
 
+    const updater = new Updater({ axios, globalConfig, feedback }, { currentVersion: version });
+
     return {
+      updater,
       runner,
       routineConfigs,
       routinePacker,

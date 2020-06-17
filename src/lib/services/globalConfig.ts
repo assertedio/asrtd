@@ -1,4 +1,5 @@
 import Conf from 'conf';
+import { DateTime } from 'luxon';
 
 interface ServicesInterface {
   conf: Conf;
@@ -7,6 +8,8 @@ interface ServicesInterface {
 const KEYS = {
   DEFAULT_PROJECT: 'defaultProject',
   API_KEY: 'key',
+  UPDATE_LOG_DATE: 'updateLogDate',
+  UPDATE_LOG_VERSION: 'updateLogVersion',
 };
 
 /**
@@ -20,6 +23,77 @@ export class GlobalConfig {
    */
   constructor(services: ServicesInterface) {
     this.services = services;
+  }
+
+  /**
+   * Get update version
+   *
+   * @returns {string | null}
+   */
+  getUpdateVersion(): string | null {
+    return this.services.conf.get(KEYS.UPDATE_LOG_VERSION) || null;
+  }
+
+  /**
+   * Set update version
+   *
+   * @param {string} version
+   * @returns {void}
+   */
+  setUpdateVersion(version: string): void {
+    this.services.conf.set(KEYS.UPDATE_LOG_VERSION, version);
+  }
+
+  /**
+   * Clear update version
+   *
+   * @returns {void}
+   */
+  clearUpdateVersion(): void {
+    this.services.conf.delete(KEYS.UPDATE_LOG_VERSION);
+  }
+
+  /**
+   * Get update log date
+   *
+   * @returns {DateTime | null}
+   */
+  getUpdateLogDate(): DateTime | null {
+    const isoDate = this.services.conf.get(KEYS.UPDATE_LOG_DATE);
+
+    if (isoDate) {
+      const parsedDate = DateTime.fromISO(isoDate);
+
+      if (!parsedDate.isValid) {
+        this.clearUpdateLogDate();
+        return null;
+      }
+
+      return parsedDate.toUTC();
+    }
+
+    return null;
+  }
+
+  /**
+   * Set update log date
+   *
+   * @param {DateTime} date
+   * @returns {void}
+   */
+  setUpdateLogDate(date: DateTime): void {
+    if (date.isValid) {
+      this.services.conf.set(KEYS.UPDATE_LOG_DATE, date.toUTC().toISO());
+    }
+  }
+
+  /**
+   * Clear log date
+   *
+   * @returns {void}
+   */
+  clearUpdateLogDate(): void {
+    this.services.conf.delete(KEYS.UPDATE_LOG_DATE);
   }
 
   /**

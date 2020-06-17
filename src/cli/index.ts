@@ -32,6 +32,11 @@ export default async (
       : chalk.red('Invalid token. Run `asrtd login`');
   }
 
+  // const updateMessage = await services.updater.getUpdateMessage(false);
+  // const versionMessage = updateMessage ? `${version}\n      ${updateMessage}` : version;
+
+  await services.updater.check();
+
   program
     .storeOptionsAsProperties(false)
     .name('asrtd')

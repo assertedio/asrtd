@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "foo": "bar"
+  },
+  "scripts": {
+    "bar": "foo"
+  }
+}

@@ -116,7 +116,7 @@
   ],
   "license": "MIT",
   "lint-staged": {
-    "package.json": [
+    "./package.json": [
       "fixpack"
     ],
     "*.{js,ts}": [

@@ -92,9 +92,11 @@ export class Routines {
     spinner.succeed('Packages installed');
   }
 
+  /* eslint-disable max-params */
   /**
    * Create routine
    *
+   * @param merge
    * @param {string} projectId
    * @param {string} name
    * @param {string} description
@@ -102,12 +104,26 @@ export class Routines {
    * @param {number} intervalValue
    * @returns {Promise<Routine>}
    */
-  async createRoutine(projectId: string, name: string, description?: string, intervalUnit?: string, intervalValue?: number): Promise<RoutineConfig> {
+  async createRoutine(
+    merge: boolean,
+    projectId: string,
+    name: string,
+    description?: string,
+    intervalUnit?: string,
+    intervalValue?: number
+  ): Promise<RoutineConfig> {
+    const existingRoutine = merge ? (await this.services.routineConfigs.read(true)) || undefined : undefined;
+
+    // TODO: Name, description, and interval are loaded elsewhere
+    // This is dumb, and should be co-located
     const createRoutine = new CreateRoutine({
       projectId,
       name,
       description,
       interval: { unit: intervalUnit as any, value: intervalValue },
+      mocha: existingRoutine?.mocha || undefined,
+      dependencies: existingRoutine?.dependencies || undefined,
+      timeoutSec: existingRoutine?.timeoutSec || undefined,
     });
     const routine = await this.services.api.routines.create(createRoutine);
 
@@ -115,6 +131,7 @@ export class Routines {
     await this.services.routineConfigs.write(routine.toRoutineConfig());
     return routine;
   }
+  /* eslint-enable max-params */
 
   /**
    * Load routine
@@ -155,6 +172,46 @@ export class Routines {
   }
 
   /**
+   * Load existing pjson
+   *
+   * @returns {Promise<Record<string, any>> | null}
+   */
+  async loadAssertedPJson(): Promise<Record<string, any> | null> {
+    try {
+      return fs.readJson(path.join(this.config.assertedDir, 'package.json'));
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Get new pjson
+   *
+   * @param {boolean} merge
+   * @returns {Promise<Record<string, any>>}
+   */
+  async getPJson(merge: boolean): Promise<Record<string, any>> {
+    const { dependencies } = Dependencies.getLatest();
+    const existingPJson = merge ? await this.loadAssertedPJson() : null;
+
+    return existingPJson
+      ? {
+          ...existingPJson,
+          scripts: {
+            ...(existingPJson?.scripts || {}),
+            prepare: 'npx mkdirp node_modules',
+          },
+          dependencies,
+        }
+      : {
+          scripts: {
+            prepare: 'npx mkdirp node_modules',
+          },
+          dependencies,
+        };
+  }
+
+  /**
    * Initialize routineConfig
    *
    * @param {InitParametersInterface} params
@@ -162,7 +219,7 @@ export class Routines {
    */
   async initialize(params: InitParametersInterface): Promise<void> {
     const { examples, install } = params;
-    const { merge } = params;
+    const { merge = false } = params;
     let { projectId, name, description, intervalValue, intervalUnit } = params;
 
     await this.services.interactions.auth.ensureAuth();
@@ -183,21 +240,10 @@ export class Routines {
     await fs.ensureDir(this.config.assertedDir);
 
     debug('Creating new routine...');
-    const { id } = await this.createRoutine(projectId, name, description, intervalUnit, intervalValue);
+    const { id } = await this.createRoutine(merge, projectId, name, description, intervalUnit, intervalValue);
     this.services.feedback.success('Created routine and wrote config to .asserted/routine.json');
 
-    const { dependencies } = Dependencies.getLatest();
-
-    await fs.writeJson(
-      path.join(this.config.assertedDir, 'package.json'),
-      {
-        dependencies,
-        scripts: {
-          prepare: 'npx mkdirp node_modules',
-        },
-      },
-      { spaces: 2 }
-    );
+    await fs.writeJson(path.join(this.config.assertedDir, 'package.json'), await this.getPJson(merge), { spaces: 2 });
 
     if (examples && !merge) {
       debug(`Copying all template files to: ${this.config.assertedDir}`);

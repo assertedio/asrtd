@@ -11,6 +11,7 @@ import { exec } from 'child_process';
 import fs from 'fs-extra';
 import path from 'path';
 import sinon from 'sinon';
+import { Dependencies } from '@asserted/runner';
 
 import chalk from 'chalk';
 import { Routines } from '../../src/commands/routines';
@@ -20,7 +21,7 @@ import { RoutineConfigs } from '../../src/lib/services/routineConfigs';
 import { getColorOfStatus } from '../../src/lib/services/utils';
 
 const OUTPUT_DIR = path.join(__dirname, '../output');
-// const RESOURCE_DIR = path.join(__dirname, '../resources/lib/services/routinePacker');
+const RESOURCE_DIR = path.join(__dirname, '../resources/lib/commands/routines');
 
 const defaultServices = {
   interactions: {} as any,
@@ -87,6 +88,51 @@ describe('routine command units', () => {
     expect(services.feedback.success.args).to.eql([['Created routine and wrote config to .asserted/routine.json'], ['Initialization complete']]);
   });
 
+  it('new pjson', async () => {
+    const services = {
+      ...defaultServices,
+    };
+
+    const assertedDir = path.join(RESOURCE_DIR, 'dev');
+
+    const routines = new Routines(services, { assertedDir, appHost: 'http://foo' });
+    const pjson = await routines.getPJson(false);
+
+    const { dependencies } = Dependencies.getLatest();
+
+    expect(pjson).to.eql({ dependencies, scripts: { prepare: 'npx mkdirp node_modules' } });
+  });
+
+  it('merge pjson - load devDeps', async () => {
+    const services = {
+      ...defaultServices,
+    };
+
+    const assertedDir = path.join(RESOURCE_DIR, 'dev');
+
+    const routines = new Routines(services, { assertedDir, appHost: 'http://foo' });
+    const pjson = await routines.getPJson(true);
+
+    const { dependencies } = Dependencies.getLatest();
+
+    expect(pjson).to.eql({ dependencies, devDependencies: { bar: 'foo' }, scripts: { prepare: 'npx mkdirp node_modules' } });
+  });
+
+  it('merge pjson - load scripts', async () => {
+    const services = {
+      ...defaultServices,
+    };
+
+    const assertedDir = path.join(RESOURCE_DIR, 'scripts');
+
+    const routines = new Routines(services, { assertedDir, appHost: 'http://foo' });
+    const pjson = await routines.getPJson(true);
+
+    const { dependencies } = Dependencies.getLatest();
+
+    expect(pjson).to.eql({ dependencies, scripts: { prepare: 'npx mkdirp node_modules', bar: 'foo' } });
+  });
+
   it('initialize with no params', async function () {
     const assertedDir = path.join(OUTPUT_DIR, '.asserted');
 
@@ -116,7 +162,7 @@ describe('routine command units', () => {
     ]);
     expect(services.interactions.projects.selectProject.callCount).to.eql(1);
 
-    expect((routines.createRoutine as any).args).to.eql([['selected-proj-id', 'some-name', 'desc', 'hr', 4]]);
+    expect((routines.createRoutine as any).args).to.eql([[false, 'selected-proj-id', 'some-name', 'desc', 'hr', 4]]);
     expect((routines.installPackages as any).callCount).to.eql(1);
 
     expect(services.feedback.success.args).to.eql([['Created routine and wrote config to .asserted/routine.json'], ['Initialization complete']]);
@@ -183,7 +229,7 @@ describe('routine command units', () => {
       ],
     ]);
 
-    expect((routines.createRoutine as any).args).to.eql([['proj-id', 'some-other-name', 'desc', 'min', 4]]);
+    expect((routines.createRoutine as any).args).to.eql([[false, 'proj-id', 'some-other-name', 'desc', 'min', 4]]);
     expect((routines.installPackages as any).callCount).to.eql(0); // no install
 
     expect(services.feedback.success.args).to.eql([['Created routine and wrote config to .asserted/routine.json'], ['Initialization complete']]);
@@ -238,7 +284,7 @@ describe('routine command units', () => {
 
     const routines = new Routines(services, { assertedDir, appHost: 'http://foo' });
 
-    await routines.createRoutine('proj-id', 'some-name', 'some-desc', 'min', 12);
+    await routines.createRoutine(false, 'proj-id', 'some-name', 'some-desc', 'min', 12);
 
     expect(services.api.routines.create.args).to.eql([
       [
@@ -253,6 +299,78 @@ describe('routine command units', () => {
             value: 12,
           },
           timeoutSec: undefined,
+        },
+      ],
+    ]);
+    expect(services.routineConfigs.write.args).to.eql([[routine.toRoutineConfig()]]);
+  });
+
+  it('create routine - merge existing', async () => {
+    const assertedDir = path.join(OUTPUT_DIR, '.asserted');
+
+    const routine = new Routine({
+      ...new RoutineConfigModel({
+        id: 'created-routine',
+        projectId: 'proj-id',
+      }),
+      hasPackage: false,
+      enabled: false,
+      createdAt: curDate,
+      updatedAt: curDate,
+    });
+
+    const existingRoutine = {
+      id: 'rt-FYt',
+      projectId: 'p-1HZ',
+      name: 'do-thing',
+      description: '',
+      interval: {
+        unit: 'hr',
+        value: 5,
+      },
+      dependencies: 'v1',
+      mocha: {
+        files: ['**/*.asrtd.js'],
+        ignore: [],
+        bail: false,
+        ui: 'bdd',
+      },
+      timeoutSec: 10,
+    };
+
+    const services = {
+      ...defaultServices,
+      feedback: sinon.stub({ ...feedback }),
+      interactions: {} as any,
+      api: {
+        routines: {
+          create: sinon.stub().resolves(routine),
+        },
+      } as any,
+      routineConfigs: {
+        write: sinon.stub().resolves(),
+        read: sinon.stub().resolves(existingRoutine),
+      } as any,
+      exec: sinon.stub(),
+    };
+
+    const routines = new Routines(services, { assertedDir, appHost: 'http://foo' });
+
+    await routines.createRoutine(true, 'proj-id', 'some-name', 'some-desc', 'min', 12);
+
+    expect(services.api.routines.create.args).to.eql([
+      [
+        {
+          projectId: 'proj-id',
+          name: 'some-name',
+          description: 'some-desc',
+          mocha: existingRoutine.mocha,
+          dependencies: 'v1',
+          interval: {
+            unit: 'min',
+            value: 12,
+          },
+          timeoutSec: 10,
         },
       ],
     ]);

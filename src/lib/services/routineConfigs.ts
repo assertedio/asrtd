@@ -114,7 +114,7 @@ export class RoutineConfigs {
    * Read or throw
    *
    * @param {boolean} safe
-   * @returns {Promise<Routine>}
+   * @returns {Promise<RoutineConfig>}
    */
   async readOrThrow(safe = false): Promise<RoutineConfig> {
     const routine = await this.read(safe);

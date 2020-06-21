@@ -89,4 +89,104 @@ describe('records unit tests', () => {
     expect(services.interactions.routines.selectRoutine.callCount).to.eql(1);
     expect(services.api.records.search.args).to.eql([['selected-routine-id', { searchThing: true }]]);
   });
+
+  it('debug normal routine', async () => {
+    const routine = {
+      id: 'rt-pyZbhZHa6',
+      projectId: 'p-efgCYgsz0',
+      name: 'do-thing',
+      description: '',
+      interval: {
+        unit: 'min',
+        value: 5,
+      },
+      dependencies: 'v1',
+      mocha: {
+        files: ['**/*.asrtd.js'],
+        ignore: [],
+        bail: false,
+        ui: 'bdd',
+      },
+      timeoutSec: 1,
+    };
+
+    const packed = {
+      package: 'some-pack',
+      summary: { foo: 'bar' } as any,
+      packageJson: { dependencies: { foo: '1.2.3' } },
+      shrinkwrapJson: { dependencies: { foo: '3.2.1' } },
+    };
+
+    const services = {
+      ...defaultServices,
+      api: { routines: { debug: sinon.stub().resolves({ id: 'foo-id' }) } } as any,
+      routineConfigs: { readOrThrow: sinon.stub().resolves(routine) } as any,
+      routinePacker: { pack: sinon.stub().resolves(packed) } as any,
+      feedback: sinon.stub({ ...feedback }),
+    };
+
+    const records = new Records(services);
+    const completedStub = sinon.stub(records, 'showCompleted');
+
+    await records.debug({ bail: false }, false);
+
+    expect(services.routineConfigs.readOrThrow.args).to.eql([[]]);
+    expect(services.routinePacker.pack.args).to.eql([[]]);
+    expect(services.api.routines.debug.args).to.eql([[{ mocha: routine.mocha, package: 'some-pack', dependencies: 'v1' }]]);
+    expect(completedStub.args).to.eql([[{ id: 'foo-id' }, false]]);
+  });
+
+  it('debug custom routine', async () => {
+    const routine = {
+      id: 'rt-pyZbhZHa6',
+      projectId: 'p-efgCYgsz0',
+      name: 'do-thing',
+      description: '',
+      interval: {
+        unit: 'min',
+        value: 5,
+      },
+      dependencies: 'custom',
+      mocha: {
+        files: ['**/*.asrtd.js'],
+        ignore: [],
+        bail: false,
+        ui: 'bdd',
+      },
+      timeoutSec: 1,
+    };
+
+    const packed = {
+      package: 'some-pack',
+      summary: { foo: 'bar' } as any,
+      packageJson: { dependencies: { foo: '1.2.3' } },
+      shrinkwrapJson: { dependencies: { foo: '3.2.1' } },
+    };
+
+    const services = {
+      ...defaultServices,
+      api: { routines: { debug: sinon.stub().resolves({ id: 'foo-id' }) } } as any,
+      routineConfigs: { readOrThrow: sinon.stub().resolves(routine) } as any,
+      routinePacker: { pack: sinon.stub().resolves(packed) } as any,
+      feedback: sinon.stub({ ...feedback }),
+    };
+
+    const records = new Records(services);
+    const completedStub = sinon.stub(records, 'showCompleted');
+
+    await records.debug({ bail: false }, false);
+
+    expect(services.routineConfigs.readOrThrow.args).to.eql([[]]);
+    expect(services.routinePacker.pack.args).to.eql([[]]);
+    expect(services.api.routines.debug.args).to.eql([
+      [
+        {
+          mocha: routine.mocha,
+          package: 'some-pack',
+          dependencies: { packageJson: { dependencies: { foo: '1.2.3' } }, shrinkwrapJson: { dependencies: { foo: '3.2.1' } } },
+        },
+      ],
+    ]);
+    expect(completedStub.args).to.eql([[{ id: 'foo-id' }, false]]);
+  });
 });

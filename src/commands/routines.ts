@@ -1,10 +1,11 @@
 import {
   CreateRoutine,
+  DEPENDENCIES_VERSIONS,
   OVERALL_ROUTINE_STATUS,
   Routine,
   ROUTINE_CONFIG_STATUS,
-  RoutineConfig,
   RoutineConfigInterface,
+  RoutineInterface,
   UpdateRoutine,
 } from '@asserted/models';
 import { Dependencies } from '@asserted/runner';
@@ -17,6 +18,7 @@ import path from 'path';
 import { table } from 'table';
 import terminalLink from 'terminal-link';
 
+import { logSummary } from '@asserted/pack';
 import { Interactions } from '../interactions';
 import { OVERWRITE_ROUTINE } from '../interactions/init';
 import { ROUTINE_FILENAME } from '../lib/constants';
@@ -111,7 +113,7 @@ export class Routines {
     description?: string,
     intervalUnit?: string,
     intervalValue?: number
-  ): Promise<RoutineConfig> {
+  ): Promise<RoutineInterface> {
     const existingRoutine = merge ? (await this.services.routineConfigs.read(true)) || undefined : undefined;
 
     // TODO: Name, description, and interval are loaded elsewhere
@@ -383,11 +385,14 @@ export class Routines {
    */
   async push(): Promise<void> {
     const routine: RoutineConfigInterface = await this.services.routineConfigs.readOrThrow();
-    const { package: packageString } = await this.services.routinePacker.pack();
+    const { package: packageString, summary, shrinkwrapJson, packageJson } = await this.services.routinePacker.pack();
+
+    logSummary(summary);
 
     const updateRoutine = new UpdateRoutine({
       ...routine,
       package: packageString,
+      dependencies: routine.dependencies === DEPENDENCIES_VERSIONS.CUSTOM ? { shrinkwrapJson, packageJson } : routine.dependencies,
     });
 
     await this.services.api.routines.push(routine.id, updateRoutine);

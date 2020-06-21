@@ -15,9 +15,10 @@
     }
   },
   "dependencies": {
-    "@asserted/models": "^9.3.1",
-    "@asserted/pack": "^2.1.3",
+    "@asserted/models": "^9.4.1-8",
+    "@asserted/pack": "^2.2.0",
     "@asserted/runner": "^3.1.0",
+    "@asserted/shrinkwrap": "^1.0.1",
     "alce": "^1.2.0",
     "auto-bind": "^4.0.0",
     "axios": "^0.19.2",
@@ -79,7 +80,7 @@
     "commitlint": "^8.3.5",
     "cz-conventional-changelog": "^3.2.0",
     "dotenv": "^8.2.0",
-    "eslint": "^7.2.0",
+    "eslint": "7.2.0",
     "eslint-import-resolver-typescript": "^2.0.0",
     "eslint-plugin-simple-import-sort": "^5.0.3",
     "fixpack": "^3.0.6",

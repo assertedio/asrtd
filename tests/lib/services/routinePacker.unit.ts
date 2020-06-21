@@ -28,7 +28,7 @@ describe('routinePacker unit tests', () => {
     const { package: routineString } = await routinePacker.pack();
     await routinePacker.unpack(routineString, OUTPUT_DIR);
 
-    const files = await fs.readdir(path.join(OUTPUT_DIR, 'package'));
+    const files = await fs.readdir(OUTPUT_DIR);
 
     expect(files).to.eql(['example.asrtd.js', 'package.json', 'routine.json']);
   });

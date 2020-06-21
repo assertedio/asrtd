@@ -307,14 +307,14 @@ export class Records {
     const spinner = ora('Running routine online...').start();
     const { package: packageString } = await this.services.routinePacker.pack();
 
-    const createRun = new Debug({
+    const debugRun = new Debug({
       dependencies: routine.dependencies,
       mocha: routine.mocha,
       package: packageString,
     });
 
     try {
-      const result = await this.services.api.routines.debug(createRun);
+      const result = await this.services.api.routines.debug(debugRun);
       spinner.succeed('Done');
 
       if (result.console) {

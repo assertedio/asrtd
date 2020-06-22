@@ -11,5 +11,4 @@ export interface InitParametersInterface extends InitRoutineInterface {
   examples: boolean;
   install: boolean;
   projectId?: string;
-  merge?: boolean;
 }

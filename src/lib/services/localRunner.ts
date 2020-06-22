@@ -59,7 +59,7 @@ export class LocalRunner {
     const reporterPath = require.resolve('mocha-ldjson');
 
     if (!(await fs.pathExists(mochaPath))) {
-      throw new Error(`mocha not found in .asserted/node_modules, run '${chalk.blue('npm i -S mocha')}' in .asserted/`);
+      throw new Error(`mocha not found in .asserted/node_modules, run '${chalk.green('npm i -S mocha')}' in .asserted/`);
     }
 
     await this.services.routineConfigs.dependenciesWarning();

@@ -1,5 +1,6 @@
 import {
   CreateRoutine,
+  CreateRoutineInterface,
   DEPENDENCIES_VERSIONS,
   OVERALL_ROUTINE_STATUS,
   Routine,
@@ -21,8 +22,7 @@ import terminalLink from 'terminal-link';
 import { logSummary } from '@asserted/pack';
 import { Interactions } from '../interactions';
 import { OVERWRITE_ROUTINE } from '../interactions/init';
-import { ROUTINE_FILENAME } from '../lib/constants';
-import { InitParametersInterface, InitRoutineInterface } from '../lib/models/init';
+import { InitParametersInterface } from '../lib/models/init';
 import { Api } from '../lib/services/api';
 import { FeedbackInterface } from '../lib/services/feedback';
 import { GlobalConfig } from '../lib/services/globalConfig';
@@ -94,141 +94,68 @@ export class Routines {
     spinner.succeed('Packages installed');
   }
 
-  /* eslint-disable max-params */
   /**
    * Create routine
    *
-   * @param merge
-   * @param {string} projectId
-   * @param {string} name
-   * @param {string} description
-   * @param {string} intervalUnit
-   * @param {number} intervalValue
+   * @param {CreateRoutineInterface} partialConfig
    * @returns {Promise<Routine>}
    */
-  async createRoutine(
-    merge: boolean,
-    projectId: string,
-    name: string,
-    description?: string,
-    intervalUnit?: string,
-    intervalValue?: number
-  ): Promise<RoutineInterface> {
-    const existingRoutine = merge ? (await this.services.routineConfigs.read(true)) || undefined : undefined;
-
-    // TODO: Name, description, and interval are loaded elsewhere
-    // This is dumb, and should be co-located
-    const createRoutine = new CreateRoutine({
-      projectId,
-      name,
-      description,
-      interval: { unit: intervalUnit as any, value: intervalValue },
-      mocha: existingRoutine?.mocha || undefined,
-      dependencies: existingRoutine?.dependencies || undefined,
-      timeoutSec: existingRoutine?.timeoutSec || undefined,
-    });
+  async createRoutine(partialConfig: CreateRoutineInterface): Promise<RoutineInterface> {
+    const createRoutine = new CreateRoutine(partialConfig);
     const routine = await this.services.api.routines.create(createRoutine);
 
     await fs.ensureDir(this.config.assertedDir);
     await this.services.routineConfigs.write(routine.toRoutineConfig());
     return routine;
   }
-  /* eslint-enable max-params */
 
   /**
-   * Load routine
-   *
-   * @param {InitRoutineInterface} params
-   * @returns {Promise<InitRoutineInterface>}
-   */
-  async loadRoutine(params: InitParametersInterface): Promise<InitRoutineInterface> {
-    let result = OVERWRITE_ROUTINE.ABORT;
-
-    if (params.merge) {
-      result = OVERWRITE_ROUTINE.MERGE;
-    } else {
-      result = await this.services.interactions.init.confirmOverwrite();
-    }
-
-    if (result === OVERWRITE_ROUTINE.ABORT) {
-      throw new Error('Aborted');
-    }
-
-    if (result === OVERWRITE_ROUTINE.OVERWRITE) {
-      if (await fs.pathExists(this.config.assertedDir)) {
-        await fs.remove(this.config.assertedDir);
-      }
-
-      return { ...params };
-    }
-
-    this.services.feedback.note(`Attempting to load ${ROUTINE_FILENAME}`);
-
-    const {
-      name,
-      description,
-      interval: { unit: intervalUnit, value: intervalValue },
-    } = await this.services.routineConfigs.readOrThrow(true);
-
-    return { name, description, intervalValue, intervalUnit, ...params };
-  }
-
-  /**
-   * Load existing pjson
-   *
-   * @returns {Promise<Record<string, any>> | null}
-   */
-  async loadAssertedPJson(): Promise<Record<string, any> | null> {
-    try {
-      return fs.readJson(path.join(this.config.assertedDir, 'package.json'));
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Get new pjson
+   * Get input from user on if routine should be merged or overwritten
    *
    * @param {boolean} merge
-   * @returns {Promise<Record<string, any>>}
+   * @returns {Promise<InitRoutineInterface>}
    */
-  async getPJson(merge: boolean): Promise<Record<string, any>> {
-    const { dependencies } = Dependencies.getLatest();
-    const existingPJson = merge ? await this.loadAssertedPJson() : null;
-
-    return existingPJson
-      ? {
-          ...existingPJson,
-          scripts: {
-            ...(existingPJson?.scripts || {}),
-            prepare: 'npx mkdirp node_modules',
-          },
-          dependencies,
-        }
-      : {
-          scripts: {
-            prepare: 'npx mkdirp node_modules',
-          },
-          dependencies,
-        };
+  async resolveConflict(): Promise<void> {
+    switch (await this.services.interactions.init.confirmOverwrite()) {
+      case OVERWRITE_ROUTINE.ABORT: {
+        throw new Error('Aborted');
+      }
+      case OVERWRITE_ROUTINE.OVERWRITE: {
+        await fs.remove(this.config.assertedDir).catch(() => ({}));
+        break;
+      }
+      default: {
+        throw new Error('Unexpected option');
+      }
+    }
   }
 
   /**
-   * Initialize routineConfig
+   * Write pjson
    *
-   * @param {InitParametersInterface} params
    * @returns {Promise<void>}
    */
-  async initialize(params: InitParametersInterface): Promise<void> {
-    const { examples, install } = params;
-    const { merge = false } = params;
+  async writePjson(): Promise<void> {
+    const { dependencies } = Dependencies.getLatest();
+
+    const pjson = {
+      scripts: {
+        prepare: 'npx mkdirp node_modules',
+      },
+      dependencies,
+    };
+
+    await fs.writeJson(path.join(this.config.assertedDir, 'package.json'), pjson, { spaces: 2 });
+  }
+
+  /**
+   * Get Config from command line args and user interaction
+   *
+   * @param {InitParametersInterface} params
+   * @returns {Promise<CreateRoutineInterface>}
+   */
+  async getConfigFromArgs(params: InitParametersInterface): Promise<CreateRoutineInterface> {
     let { projectId, name, description, intervalValue, intervalUnit } = params;
-
-    await this.services.interactions.auth.ensureAuth();
-
-    if (await this.services.routineConfigs.exists()) {
-      ({ name, description, intervalUnit, intervalValue } = await this.loadRoutine(params));
-    }
 
     projectId = projectId || (await this.services.interactions.projects.selectProject()).id;
 
@@ -239,15 +166,40 @@ export class Routines {
       intervalUnit,
     }));
 
-    await fs.ensureDir(this.config.assertedDir);
+    return {
+      projectId,
+      name,
+      description,
+      interval: {
+        value: intervalValue,
+        unit: intervalUnit,
+      },
+    };
+  }
 
+  /**
+   * Initialize routineConfig
+   *
+   * @param {InitParametersInterface} params
+   * @returns {Promise<void>}
+   */
+  async initialize(params: InitParametersInterface): Promise<void> {
+    const { examples, install } = params;
+
+    await this.services.interactions.auth.ensureAuth();
+
+    if (await this.services.routineConfigs.exists()) {
+      await this.resolveConflict();
+    }
+
+    const partialConfig = await this.getConfigFromArgs(params);
     debug('Creating new routine...');
-    const { id } = await this.createRoutine(merge, projectId, name, description, intervalUnit, intervalValue);
+    const { id } = await this.createRoutine(partialConfig);
     this.services.feedback.success('Created routine and wrote config to .asserted/routine.json');
 
-    await fs.writeJson(path.join(this.config.assertedDir, 'package.json'), await this.getPJson(merge), { spaces: 2 });
+    await this.writePjson();
 
-    if (examples && !merge) {
+    if (examples) {
       debug(`Copying all template files to: ${this.config.assertedDir}`);
       await fs.copy(TEMPLATES_PATH, this.config.assertedDir);
       // This is really dumb, but for some reason, NPM auto-renames .gitignore to .npmignore. So this is a workaround

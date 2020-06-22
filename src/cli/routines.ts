@@ -45,7 +45,6 @@ export default (program: commander.Command, actions: ActionsInterface): commande
 
       return inputNumber;
     })
-    .option('--merge', 'if .asserted exists, only create new routine id')
     .option('--no-examples', "don't create examples during initialization")
     .option('--no-install', "don't install asserted dependencies")
     .action(actions.routines.init);

@@ -15,7 +15,6 @@ export interface ConfigInterface {
 export enum OVERWRITE_ROUTINE {
   ABORT = 'abort',
   OVERWRITE = 'wipe existing .asserted and recreate',
-  MERGE = 'create only new routine ID and merge with existing .asserted',
 }
 
 /**
@@ -68,7 +67,7 @@ export class Init {
       {
         type: 'list',
         name: 'confirm',
-        message: `${ROUTINE_FILENAME} already exists. Abort, overwrite, or merge?`,
+        message: `${ROUTINE_FILENAME} already exists. Abort or overwrite?`,
         default: OVERWRITE_ROUTINE.ABORT,
         choices: Object.values(OVERWRITE_ROUTINE),
       },

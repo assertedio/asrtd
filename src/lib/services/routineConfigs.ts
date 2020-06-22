@@ -132,7 +132,7 @@ export class RoutineConfigs {
    * @returns {Promise<boolean>}
    */
   async exists(): Promise<boolean> {
-    return fs.pathExists(this.getPath());
+    return fs.pathExists(this.getPath()).catch(() => false);
   }
 
   /**

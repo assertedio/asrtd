@@ -306,7 +306,7 @@ export class Records {
 
     this.services.feedback.info(`NOTE: ${chalk.yellow('Online runs may be rate limited')}`);
     this.services.feedback.info(
-      `Use '${chalk.blue('asrtd run')}' for development, and '${chalk.blue('asrtd run --online')}' only for debugging issues with pushed routines.`
+      `Use '${chalk.green('asrtd run')}' for development, and '${chalk.green('asrtd run --online')}' only for debugging issues with pushed routines.`
     );
     this.services.feedback.note('');
     const { package: packageString, shrinkwrapJson, packageJson, summary } = await this.services.routinePacker.pack();

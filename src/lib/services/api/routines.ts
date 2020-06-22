@@ -1,4 +1,11 @@
-import { CompletedRunRecord, CreateRoutineInterface, Debug, Routine, UpdateRoutineInterface } from '@asserted/models';
+import {
+  CompletedRunRecord,
+  CreateRoutineInterface,
+  Debug,
+  Routine,
+  RoutineInterface,
+  UpdateRoutineInterface
+} from '@asserted/models';
 import { AxiosInstance } from 'axios';
 import HTTP_STATUS from 'http-status';
 
@@ -8,6 +15,10 @@ import { FeedbackInterface } from '../feedback';
 export interface ServicesInterface {
   axios: AxiosInstance;
   feedback: FeedbackInterface;
+}
+
+interface PushResponse extends Pick<RoutineInterface, 'dependencies'> {
+  cachedDependencies?: boolean;
 }
 
 /**
@@ -56,9 +67,9 @@ export class Routines {
    * @param {UpdateRoutineInterface} updateRoutine
    * @returns {Promise<void>}
    */
-  async push(routineId: string, updateRoutine: UpdateRoutineInterface): Promise<void> {
-    await this.services.axios
-      .put(`/routines/${routineId}`, updateRoutine)
+  async push(routineId: string, updateRoutine: UpdateRoutineInterface, async: boolean): Promise<PushResponse> {
+    return this.services.axios
+      .put(`/routines/${routineId}?async=${async}`, updateRoutine)
       .catch(defaultApiError([HTTP_STATUS.NOT_FOUND]))
       .then((response: ApiErrorResponseInterface | any) => {
         if (isErrorResponse(response)) {

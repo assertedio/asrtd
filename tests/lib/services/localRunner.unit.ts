@@ -55,8 +55,8 @@ describe('localrunner unit tests', () => {
       console: null,
       error: null,
       status: 'failed',
-      failType: 'timeout',
-      timeoutType: 'unknown',
+      failType: 'error',
+      timeoutType: null,
       completedAt: curDate,
       results: [],
     };

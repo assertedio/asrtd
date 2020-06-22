@@ -4,6 +4,7 @@ import {
   DEPENDENCIES_VERSIONS,
   RoutineConfig as RoutineConfigModel,
   RoutineConfigInterface,
+  RUN_FAIL_TYPE,
   RUN_STATUS,
   Search,
   TEST_EVENT_TYPES,
@@ -82,33 +83,36 @@ export class Records {
 
     return [
       headers,
-      ...records.map((record) =>
-        !isGroupedPass(record)
-          ? [
-              record.id,
-              chalk[getColorOfStatus(record.status)](
-                record.status === RUN_STATUS.FAILED && record.failType ? `${capitalCase(record.failType)} failure` : capitalCase(record.status)
-              ),
-              DateTime.fromJSDate(record.completedAt).toLocaleString(DateTime.DATETIME_SHORT),
-              shortHumanizer(record.testDurationMs, DURATION_CONFIG),
-              record.stats?.suites,
-              record.stats?.tests,
-              chalk.green(record.stats?.passes),
-              chalk.red(record.stats?.failures),
-              record.stats?.pending,
-            ]
-          : [
-              '',
-              chalk.green('Multiple\nPasses'),
-              '',
-              shortHumanizer((record.end?.valueOf() || Date.now()) - record.start.valueOf(), DURATION_CONFIG),
-              '',
-              '',
-              '',
-              '',
-              '',
-            ]
-      ),
+      ...records.map((record) => {
+        if (!isGroupedPass(record)) {
+          const failMessage =
+            record?.failType === RUN_FAIL_TYPE.TEST ? `${capitalCase(record?.failType)} failure` : capitalCase(record?.failType || '');
+
+          return [
+            record.id,
+            chalk[getColorOfStatus(record.status)](record.status === RUN_STATUS.FAILED && record.failType ? failMessage : capitalCase(record.status)),
+            DateTime.fromJSDate(record.completedAt).toLocaleString(DateTime.DATETIME_SHORT),
+            shortHumanizer(record.testDurationMs, DURATION_CONFIG),
+            record.stats?.suites,
+            record.stats?.tests,
+            chalk.green(record.stats?.passes || 0),
+            chalk.red(record.stats?.failures || 0),
+            record.stats?.pending,
+          ];
+        }
+
+        return [
+          '',
+          chalk.green('Multiple\nPasses'),
+          '',
+          shortHumanizer((record.end?.valueOf() || Date.now()) - record.start.valueOf(), DURATION_CONFIG),
+          '',
+          '',
+          '',
+          '',
+          '',
+        ];
+      }),
     ];
   }
 

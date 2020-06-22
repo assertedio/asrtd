@@ -87,7 +87,7 @@ describe('updater unit tests', () => {
 
     const message = await updater.getUpdateMessage(true);
     expect(getStub.callCount).to.eql(1);
-    expect(message).to.eql('\u001B[32mminor\u001B[39m update available. Run: \u001B[34mnpm i -g asrtd\u001B[39m to update.');
+    expect(message).to.eql('\u001B[32mminor\u001B[39m update available. Run: \u001B[32mnpm i -g asrtd\u001B[39m to update.');
   });
 
   it('get update message - major', async () => {
@@ -137,7 +137,7 @@ describe('updater unit tests', () => {
 
     const message = await updater.getUpdateMessage(true);
     expect(getStub.callCount).to.eql(1);
-    expect(message).to.eql('\u001B[32mminor\u001B[39m update available. Run: \u001B[34mnpm i -g asrtd\u001B[39m to update.');
+    expect(message).to.eql('\u001B[32mminor\u001B[39m update available. Run: \u001B[32mnpm i -g asrtd\u001B[39m to update.');
   });
 
   it('get update message - debounce', async () => {

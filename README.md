@@ -92,11 +92,15 @@ At any time you can run `asrtd --help` to get a list of available commands.
 ![asrtd records](https://raw.githubusercontent.com/assertedio/asrtd/master/images/help.png)
 
 
-# Included Dependencies
+# Dependencies
 
-For the moment, the dependencies available to tests are fixed, though we expect to support custom dependencies in the future.
+## Fixed Dependencies
 
-## Major libraries
+The dependencies available on the free plan are fixed, but they should cover most major use cases.
+
+For cases where custom dependencies are required, upgrade to a paid plan.
+
+### Major libraries
 
 - mocha - [NPM](http://npmjs.com/package/mocha) - [Docs](https://mochajs.org/)
 - chai - [NPM](https://www.npmjs.com/package/chai) - [Docs](https://www.chaijs.com/)
@@ -104,7 +108,7 @@ For the moment, the dependencies available to tests are fixed, though we expect 
 - axios - [NPM](https://www.npmjs.com/package/axios) - [Docs](https://www.npmjs.com/package/axios)
 - lodash - [NPM](https://www.npmjs.com/package/lodash) - [Docs](https://lodash.com/)
 
-## All Available Dependencies
+### All Available Dependencies
 
 ```json
 {
@@ -142,3 +146,35 @@ For the moment, the dependencies available to tests are fixed, though we expect 
     "validator": "^13.0.0"
 }
 ```
+
+## Custom Dependencies
+
+For paid plans, custom dependencies are an option.
+To use custom dependencies, just change the "dependencies" entry in your `routine.json` to "custom", as shown below.
+
+```json5
+{
+  "id": "rt-GKgRG",
+  "projectId": "p-1HLbs9Z",
+  "name": "custom-dep-tests",
+  "description": "Tests with Custom Dependencies",
+  "interval": {
+    "unit": "min",
+    "value": 10
+  },
+  "dependencies": "custom", // The "custom" option is available on paid plans
+  "mocha": {
+    "files": [
+      "**/*.asrtd.js"
+    ],
+    "ignore": [],
+    "bail": false,
+    "ui": "bdd"
+  },
+  "timeoutSec": 10
+}
+```
+
+Once that change is made, any subsequent pushes will include all of the dependencies listed in the "dependencies" entry of your `package.json`. "devDependencies" and "peerDependencies" are ignored.
+
+A modified version of `npm-shrinkwrap` is used to capture the exact versions of the dependencies in your current `node_modules` folder during the push.

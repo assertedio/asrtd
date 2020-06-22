@@ -5,6 +5,7 @@ import { DateTime } from 'luxon';
 import * as os from 'os';
 import path from 'path';
 
+import chalk from 'chalk';
 import getLogger from '../../logger';
 import { RoutineConfigs } from './routineConfigs';
 
@@ -58,7 +59,7 @@ export class LocalRunner {
     const reporterPath = require.resolve('mocha-ldjson');
 
     if (!(await fs.pathExists(mochaPath))) {
-      throw new Error("mocha not found in .asserted/node_modules, run 'npm i' in .asserted/");
+      throw new Error(`mocha not found in .asserted/node_modules, run '${chalk.green('npm i -S mocha')}' in .asserted/`);
     }
 
     await this.services.routineConfigs.dependenciesWarning();

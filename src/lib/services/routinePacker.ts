@@ -3,7 +3,10 @@ import { createPackage } from '@asserted/pack';
 import fs from 'fs-extra';
 import { Readable } from 'stream';
 import tar from 'tar';
+import path from 'path';
+import shrinkwrap from '@asserted/shrinkwrap';
 
+import { DependenciesInterface } from '@asserted/models';
 import { RoutineConfigs } from './routineConfigs';
 
 interface ServicesInterface {
@@ -12,6 +15,11 @@ interface ServicesInterface {
 
 interface ConfigInterface {
   assertedDir: string;
+}
+
+interface PackedRoutineInterface extends DependenciesInterface {
+  package: string;
+  summary: any;
 }
 
 /**
@@ -36,14 +44,20 @@ export class RoutinePacker {
    *
    * @returns {Promise<string>}
    */
-  async pack(): Promise<{ package: string; summary: any }> {
+  async pack(): Promise<PackedRoutineInterface> {
     await this.services.routineConfigs.dependenciesWarning();
 
+    if (!(await fs.pathExists(path.join(this.config.assertedDir, 'package.json')))) {
+      throw new Error('package.json not found in .asserted');
+    }
+
     return new Promise((resolve) => {
-      const result = {} as { package: string; summary: any };
+      const result = {} as PackedRoutineInterface;
       createPackage(this.config.assertedDir, async ({ target, summary }) => {
         result.package = await fs.readFile(target, 'base64');
         result.summary = summary;
+        result.packageJson = await fs.readJson(path.join(this.config.assertedDir, 'package.json'));
+        result.shrinkwrapJson = await shrinkwrap(this.config.assertedDir);
       }).then(() => resolve(result));
     });
   }

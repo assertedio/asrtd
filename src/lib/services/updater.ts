@@ -98,7 +98,7 @@ export class Updater {
         )} to update.`;
       }
       default: {
-        return `${chalk.green(diff)} update available. Run: ${chalk.blue('npm i -g asrtd')} to update.`;
+        return `${chalk.green(diff)} update available. Run: ${chalk.green('npm i -g asrtd')} to update.`;
       }
     }
   }

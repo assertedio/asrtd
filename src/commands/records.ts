@@ -1,6 +1,7 @@
 import {
   CompletedRunRecord,
   Debug,
+  DEPENDENCIES_VERSIONS,
   RoutineConfig as RoutineConfigModel,
   RoutineConfigInterface,
   RUN_STATUS,
@@ -17,6 +18,7 @@ import { DateTime } from 'luxon';
 import ora from 'ora';
 import { table } from 'table';
 
+import { logSummary } from '@asserted/pack';
 import { Interactions } from '../interactions';
 import { Api } from '../lib/services/api';
 import { FeedbackInterface } from '../lib/services/feedback';
@@ -295,26 +297,35 @@ export class Records {
    * Run routine once online, without replacing existing routine
    *
    * @param {RunInterface} params
+   * @param {boolean} showSummary
    * @returns {Promise<void>}
    */
-  async debug(params: RunInterface): Promise<void> {
+  async debug(params: RunInterface, showSummary = true): Promise<void> {
     let routine: RoutineConfigInterface = await this.services.routineConfigs.readOrThrow();
     routine = new RoutineConfigModel({ ...routine, mocha: { ...routine.mocha, ...params } });
 
     this.services.feedback.info(`NOTE: ${chalk.yellow('Online runs may be rate limited')}`);
-    this.services.feedback.info("Use 'asrtd run' for development, and 'asrtd run --online' only for debugging issues with pushed routines.");
+    this.services.feedback.info(
+      `Use '${chalk.green('asrtd run')}' for development, and '${chalk.green('asrtd run --online')}' only for debugging issues with pushed routines.`
+    );
     this.services.feedback.note('');
-    const spinner = ora('Running routine online...').start();
-    const { package: packageString } = await this.services.routinePacker.pack();
+    const { package: packageString, shrinkwrapJson, packageJson, summary } = await this.services.routinePacker.pack();
 
-    const createRun = new Debug({
-      dependencies: routine.dependencies,
+    if (showSummary) {
+      logSummary(summary);
+      this.services.feedback.note('');
+    }
+
+    const debugRun = new Debug({
+      dependencies: routine.dependencies === DEPENDENCIES_VERSIONS.CUSTOM ? { shrinkwrapJson, packageJson } : routine.dependencies,
       mocha: routine.mocha,
       package: packageString,
     });
 
+    const spinner = ora('Running routine online...').start();
+
     try {
-      const result = await this.services.api.routines.debug(createRun);
+      const result = await this.services.api.routines.debug(debugRun);
       spinner.succeed('Done');
 
       if (result.console) {

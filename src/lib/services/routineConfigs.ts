@@ -114,7 +114,7 @@ export class RoutineConfigs {
    * Read or throw
    *
    * @param {boolean} safe
-   * @returns {Promise<Routine>}
+   * @returns {Promise<RoutineConfig>}
    */
   async readOrThrow(safe = false): Promise<RoutineConfig> {
     const routine = await this.read(safe);
@@ -132,7 +132,7 @@ export class RoutineConfigs {
    * @returns {Promise<boolean>}
    */
   async exists(): Promise<boolean> {
-    return fs.pathExists(this.getPath());
+    return fs.pathExists(this.getPath()).catch(() => false);
   }
 
   /**

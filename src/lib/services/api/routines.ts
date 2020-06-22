@@ -1,4 +1,4 @@
-import { CompletedRunRecord, CreateRoutineInterface, CreateRun, Routine, UpdateRoutineInterface } from '@asserted/models';
+import { CompletedRunRecord, CreateRoutineInterface, Debug, Routine, UpdateRoutineInterface } from '@asserted/models';
 import { AxiosInstance } from 'axios';
 import HTTP_STATUS from 'http-status';
 
@@ -26,12 +26,12 @@ export class Routines {
   /**
    * Upload current package and run once, without overwriting remote
    *
-   * @param {CreateRun} createRun
+   * @param {Debug} debug
    * @returns {Promise<CompletedRunRecord>}
    */
-  async debug(createRun: CreateRun): Promise<CompletedRunRecord> {
+  async debug(debug: Debug): Promise<CompletedRunRecord> {
     return this.services.axios
-      .post('/debug', createRun)
+      .post('/debug', debug)
       .then((response: any) => new CompletedRunRecord(response))
       .catch(defaultApiError());
   }

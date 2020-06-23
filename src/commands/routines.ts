@@ -335,13 +335,16 @@ export class Routines {
   /**
    * Push new version of routine
    *
+   * @param showSummary
    * @returns {Promise<void>}
    */
-  async push(): Promise<void> {
+  async push(showSummary = true): Promise<void> {
     const routine: RoutineConfigInterface = await this.services.routineConfigs.readOrThrow();
     const { package: packageString, summary, shrinkwrapJson, packageJson } = await this.services.routinePacker.pack();
 
-    logSummary(summary);
+    if (showSummary) {
+      logSummary(summary);
+    }
 
     const updateRoutine = new UpdateRoutine({
       ...routine,

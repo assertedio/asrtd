@@ -26,8 +26,10 @@ export class InternalSocket {
 
   socket: SocketIOClient.Socket | null = null;
 
+  // eslint-disable-next-line no-magic-numbers
   builds: LRU<string, () => void> = new LRU<string, () => void>(50);
 
+  // eslint-disable-next-line no-magic-numbers
   runs: LRU<string, () => void> = new LRU<string, () => void>(50);
 
   /**
@@ -83,7 +85,13 @@ export class InternalSocket {
     );
   }
 
-  addBuildId(buildId: string) {
+  /**
+   * Add build ID and call resolve if present
+   *
+   * @param {string} buildId
+   * @returns {void}
+   */
+  addBuildId(buildId: string): void {
     const resolve = this.builds.get(buildId);
     if (resolve) {
       resolve();
@@ -92,6 +100,11 @@ export class InternalSocket {
     }
   }
 
+  /**
+   * Wait for build to complete
+   *
+   * @returns {{ wait: Promise<string | undefined>; cancel: () => void }}
+   */
   waitForBuild(): { wait: Promise<string | undefined>; cancel: () => void } {
     if (!this.socket) {
       throw new Error('no socket to wait for');
@@ -123,7 +136,12 @@ export class InternalSocket {
     };
   }
 
-  disconnect() {
+  /**
+   * Disconnect
+   *
+   * @returns {void}
+   */
+  disconnect(): void {
     log('disconnecting socket');
     if (this.socket) {
       this.socket.removeAllListeners();
@@ -133,3 +151,4 @@ export class InternalSocket {
     this.socket = null;
   }
 }
+/* eslint-enable no-unused-expressions */

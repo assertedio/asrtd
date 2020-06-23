@@ -1,11 +1,4 @@
-import {
-  CompletedRunRecord,
-  CreateRoutineInterface,
-  Debug,
-  Routine,
-  RoutineInterface,
-  UpdateRoutineInterface
-} from '@asserted/models';
+import { CompletedRunRecord, CreateRoutineInterface, Debug, Routine, RoutineInterface, UpdateRoutineInterface } from '@asserted/models';
 import { AxiosInstance } from 'axios';
 import HTTP_STATUS from 'http-status';
 
@@ -48,6 +41,32 @@ export class Routines {
   }
 
   /**
+   * Upload current package and run once, without overwriting remote
+   *
+   * @param {Debug} debug
+   * @returns {Promise<CompletedRunRecord>}
+   */
+  async debugAsync(debug: Debug): Promise<{ recordId: string; cachedDependencies: boolean; dependencies: string }> {
+    return this.services.axios
+      .post('/debug?async=true', debug)
+      .then((response: any) => response)
+      .catch(defaultApiError());
+  }
+
+  /**
+   * Get debug record
+   *
+   * @param {string} recordId
+   * @returns {Promise<CompletedRunRecord>}
+   */
+  async getDebugRecord(recordId: string): Promise<CompletedRunRecord> {
+    return this.services.axios
+      .get(`/debug/records/${recordId}`)
+      .then((response: any) => new CompletedRunRecord(response))
+      .catch(defaultApiError());
+  }
+
+  /**
    * Run routine immediately
    *
    * @param {string} routineId
@@ -65,6 +84,7 @@ export class Routines {
    *
    * @param {string} routineId
    * @param {UpdateRoutineInterface} updateRoutine
+   * @param {boolean} async
    * @returns {Promise<void>}
    */
   async push(routineId: string, updateRoutine: UpdateRoutineInterface, async: boolean): Promise<PushResponse> {

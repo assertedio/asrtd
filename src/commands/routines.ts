@@ -333,9 +333,48 @@ export class Routines {
   }
 
   /**
+   * Optionally push and wait with socket
+   *
+   * @param {string} id
+   * @param {UpdateRoutine} updateRoutine
+   * @returns {Promise<void>}
+   */
+  async pushWithSocket(id: string, updateRoutine: UpdateRoutine): Promise<void> {
+    if (updateRoutine.dependencies === DEPENDENCIES_VERSIONS.CUSTOM && (await this.services.internalSocket.hasSocket())) {
+      const spinner = ora('Building dependencies (may take a minute) ...').start();
+
+      try {
+        const { wait, cancel } = this.services.internalSocket.waitForBuild();
+        const { dependencies, cachedDependencies } = await this.services.api.routines.push(id, updateRoutine, true);
+        this.services.internalSocket.addBuildId(dependencies);
+
+        if (cachedDependencies) {
+          cancel();
+          spinner.succeed('Using cached dependencies');
+        } else {
+          const console = await wait;
+
+          // eslint-disable-next-line max-depth
+          if (console) {
+            spinner.clear();
+            throw new Error(`Build failed: ${console}`);
+          }
+
+          spinner.succeed('Built dependencies');
+        }
+      } catch (error) {
+        spinner.clear();
+        throw error;
+      }
+    } else {
+      await this.services.api.routines.push(id, updateRoutine, false);
+    }
+  }
+
+  /**
    * Push new version of routine
    *
-   * @param showSummary
+   * @param {boolean} showSummary
    * @returns {Promise<void>}
    */
   async push(showSummary = true): Promise<void> {
@@ -352,35 +391,7 @@ export class Routines {
       dependencies: routine.dependencies === DEPENDENCIES_VERSIONS.CUSTOM ? { shrinkwrapJson, packageJson } : routine.dependencies,
     });
 
-    if (routine.dependencies === DEPENDENCIES_VERSIONS.CUSTOM && (await this.services.internalSocket.hasSocket())) {
-      const spinner = ora('Building dependencies (may take a minute) ...').start();
-
-      try {
-        const { wait, cancel } = this.services.internalSocket.waitForBuild();
-        const { dependencies, cachedDependencies } = await this.services.api.routines.push(routine.id, updateRoutine, true);
-        this.services.internalSocket.addBuildId(dependencies);
-
-        if (cachedDependencies) {
-          cancel();
-          spinner.succeed('Using cached build');
-        } else {
-          const console = await wait;
-
-          // eslint-disable-next-line max-depth
-          if (console) {
-            spinner.clear();
-            throw new Error(`Build failed: ${console}`);
-          }
-
-          spinner.succeed('Build completed');
-        }
-      } catch (error) {
-        spinner.clear();
-        throw error;
-      }
-    } else {
-      await this.services.api.routines.push(routine.id, updateRoutine, false);
-    }
+    await this.pushWithSocket(routine.id, updateRoutine);
 
     this.services.feedback.success(`Routine ${routine.id} updated`);
     this.services.internalSocket.disconnect();

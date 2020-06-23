@@ -103,6 +103,9 @@ export class InternalSocket {
   /**
    * Wait for build to complete
    *
+   * This is maybe a bit more complicated than expected because there is no way
+   * to know which order the calls come in.
+   *
    * @returns {{ wait: Promise<string | undefined>; cancel: () => void }}
    */
   waitForBuild(): { wait: Promise<string | undefined>; cancel: () => void } {

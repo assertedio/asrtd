@@ -154,7 +154,7 @@
     "prepare": "fixpack",
     "prepublishOnly": "npm run build",
     "preversion": "npm run lint && npm run test",
-    "release": "release-it",
+    "release": "HUSKY_SKIP_HOOKS=1 release-it",
     "test": "nyc mocha --recursive -r source-map-support/register -r ts-node/register -r tsconfig-paths/register --use_strict --exit \"tests/**/*.+(unit|it).+(ts|js)\"",
     "unit": "nyc mocha --recursive -r source-map-support/register -r ts-node/register -r tsconfig-paths/register --use_strict --exit \"tests/**/*.unit.+(ts|js)\""
   },

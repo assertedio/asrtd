@@ -15,7 +15,7 @@
     }
   },
   "dependencies": {
-    "@asserted/models": "^10.0.2-1",
+    "@asserted/models": "^10.0.2",
     "@asserted/pack": "^2.2.1",
     "@asserted/runner": "^3.2.3",
     "@asserted/shrinkwrap": "^1.0.1",

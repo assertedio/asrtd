@@ -5,7 +5,7 @@ import pjson from '../package.json';
 import { Config, ConfigInterface } from './config';
 import { getAssertedDir } from './lib/services/utils';
 
-const DEFAULT_API_BASE_URL = 'https://api.asserted.io/v1';
+const DEFAULT_API_BASE_URL = 'https://api.asserted.io';
 const DEFAULT_APP_BASE_URL = 'https://app.asserted.io';
 
 export const load = (): Config => {

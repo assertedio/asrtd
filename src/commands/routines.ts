@@ -2,6 +2,7 @@ import {
   CreateRoutine,
   CreateRoutineInterface,
   DEPENDENCIES_VERSIONS,
+  isDependenciesObject,
   OVERALL_ROUTINE_STATUS,
   Routine,
   ROUTINE_CONFIG_STATUS,
@@ -32,6 +33,7 @@ import { RoutinePacker } from '../lib/services/routinePacker';
 import { getColorOfStatus } from '../lib/services/utils';
 import getLogger from '../logger';
 import { TABLE_CONFIG } from './utils';
+import { InternalSocket } from '../lib/clients/internalSocket';
 
 export interface ServicesInterface {
   interactions: Interactions;
@@ -42,6 +44,7 @@ export interface ServicesInterface {
   routinePacker: RoutinePacker;
   exec: any;
   feedback: FeedbackInterface;
+  internalSocket: InternalSocket;
 }
 
 export interface ConfigInterface {
@@ -331,15 +334,57 @@ export class Routines {
   }
 
   /**
-   * Push new version of routine
+   * Optionally push and wait with socket
    *
+   * @param {string} id
+   * @param {UpdateRoutine} updateRoutine
    * @returns {Promise<void>}
    */
-  async push(): Promise<void> {
+  async pushWithSocket(id: string, updateRoutine: UpdateRoutine): Promise<void> {
+    if (isDependenciesObject(updateRoutine.dependencies) && (await this.services.internalSocket.hasSocket())) {
+      const spinner = ora('Building dependencies (may take a minute) ...').start();
+
+      try {
+        const { wait, cancel } = this.services.internalSocket.waitForBuild();
+        const { dependencies, cachedDependencies } = await this.services.api.routines.push(id, updateRoutine, true);
+        this.services.internalSocket.addBuildId(dependencies);
+
+        if (cachedDependencies) {
+          cancel();
+          spinner.succeed('Using cached dependencies');
+        } else {
+          const console = await wait;
+
+          // eslint-disable-next-line max-depth
+          if (console) {
+            spinner.clear();
+            throw new Error(`Build failed: ${console}`);
+          }
+
+          spinner.succeed('Built dependencies');
+        }
+      } catch (error) {
+        spinner.clear();
+        throw error;
+      }
+    } else {
+      await this.services.api.routines.push(id, updateRoutine, false);
+    }
+  }
+
+  /**
+   * Push new version of routine
+   *
+   * @param {boolean} showSummary
+   * @returns {Promise<void>}
+   */
+  async push(showSummary = true): Promise<void> {
     const routine: RoutineConfigInterface = await this.services.routineConfigs.readOrThrow();
     const { package: packageString, summary, shrinkwrapJson, packageJson } = await this.services.routinePacker.pack();
 
-    logSummary(summary);
+    if (showSummary) {
+      logSummary(summary);
+    }
 
     const updateRoutine = new UpdateRoutine({
       ...routine,
@@ -347,7 +392,9 @@ export class Routines {
       dependencies: routine.dependencies === DEPENDENCIES_VERSIONS.CUSTOM ? { shrinkwrapJson, packageJson } : routine.dependencies,
     });
 
-    await this.services.api.routines.push(routine.id, updateRoutine);
+    await this.pushWithSocket(routine.id, updateRoutine);
+
     this.services.feedback.success(`Routine ${routine.id} updated`);
+    this.services.internalSocket.disconnect();
   }
 }

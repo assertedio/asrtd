@@ -35,7 +35,7 @@ export const isErrorResponse = (input: any | ApiErrorResponseInterface): input i
  */
 export const getInstance = (globalConfig: GlobalConfig, apiHost: string, axiosFactory: AxiosStatic = axios): AxiosInstance => {
   const axiosInstance = axiosFactory.create({
-    baseURL: apiHost,
+    baseURL: `${apiHost}/v1`,
     headers: {
       'content-type': 'application/json',
       asrtd: pjson.version,

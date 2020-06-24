@@ -20,6 +20,7 @@ import { LocalRunner } from './lib/services/localRunner';
 import { RoutineConfigs } from './lib/services/routineConfigs';
 import { RoutinePacker } from './lib/services/routinePacker';
 import { Updater } from './lib/services/updater';
+import { InternalSocket } from './lib/clients/internalSocket';
 
 export interface ServicesInterface {
   runner: Runner;
@@ -33,6 +34,7 @@ export interface ServicesInterface {
   globalConfig: GlobalConfig;
   feedback: FeedbackInterface;
   updater: Updater;
+  internalSocket: InternalSocket;
 }
 
 export interface ActionsInterface {
@@ -100,14 +102,16 @@ export class ServiceManager {
     const axiosInstance = getInstance(globalConfig, apiHost);
     const api = new Api({ axios: axiosInstance, feedback });
     const interactions = new Interactions({ globalConfig, feedback, api }, { assertedDir, appHost });
+    const internalSocket = new InternalSocket({ globalConfig }, { apiHost });
     const commands = new Commands(
-      { interactions, routineConfigs, api, globalConfig, routinePacker, localRunner, exec, feedback },
+      { internalSocket, interactions, routineConfigs, api, globalConfig, routinePacker, localRunner, exec, feedback },
       { appHost, assertedDir }
     );
 
     const updater = new Updater({ axios, globalConfig, feedback }, { currentVersion: version });
 
     return {
+      internalSocket,
       updater,
       runner,
       routineConfigs,

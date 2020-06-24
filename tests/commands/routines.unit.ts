@@ -1,4 +1,12 @@
-import { Routine, RoutineConfig as RoutineConfigModel, RUN_STATUS, TEST_RESULT_STATUS, TIMELINE_EVENT_STATUS } from '@asserted/models';
+import {
+  DEPENDENCIES_VERSIONS,
+  Routine,
+  RoutineConfig,
+  RoutineConfig as RoutineConfigModel,
+  RUN_STATUS,
+  TEST_RESULT_STATUS,
+  TIMELINE_EVENT_STATUS,
+} from '@asserted/models';
 import { expect } from 'chai';
 import { exec } from 'child_process';
 import fs from 'fs-extra';
@@ -23,6 +31,7 @@ const defaultServices = {
   routineConfigs: {} as any,
   feedback: {} as any,
   exec: {} as any,
+  internalSocket: {} as any,
 };
 
 const curDate = new Date('2018-01-01T00:00:00.000Z');
@@ -515,6 +524,209 @@ describe('routine command units', () => {
     expect(services.interactions.routines.selectRoutine.callCount).to.eql(0);
     expect(services.api.routines.disable.args).to.eql([['routine-id']]);
     expect(services.feedback.success.callCount).to.eql(1);
+  });
+
+  it('push updates w non-custom dependencies', async () => {
+    const routineConfig = new RoutineConfig({ id: 'some-id', projectId: 'proj-id' });
+
+    const services = {
+      ...defaultServices,
+      feedback: sinon.stub({ ...feedback }),
+      api: {
+        routines: {
+          push: sinon.stub().resolves(),
+        },
+      } as any,
+      routineConfigs: {
+        readOrThrow: sinon.stub().resolves(routineConfig),
+      } as any,
+      routinePacker: {
+        pack: sinon.stub().resolves({
+          package: 'pack-string',
+          summary: { foo: 'fooooo' },
+          packageJson: { dependencies: { foo: '1.2.3' } },
+          shrinkwrapJson: { bar: '3.2.1' },
+        }),
+      } as any,
+      internalSocket: {
+        hasSocket: sinon.stub().resolves(),
+        disconnect: sinon.stub(),
+      } as any,
+    };
+
+    const routines = new Routines(services, {} as any);
+    await routines.push(false);
+
+    expect(services.routineConfigs.readOrThrow.callCount).to.eql(1);
+    expect(services.routinePacker.pack.callCount).to.eql(1);
+    expect(services.internalSocket.hasSocket.callCount).to.eql(0);
+    expect(services.api.routines.push.args).to.eql([
+      [
+        'some-id',
+        {
+          name: '',
+          description: '',
+          interval: {
+            unit: 'min',
+            value: 5,
+          },
+          mocha: {
+            files: ['**/*.asrtd.js'],
+            ignore: [],
+            bail: false,
+            ui: 'bdd',
+          },
+          package: 'pack-string',
+          timeoutSec: 1,
+          dependencies: 'v1',
+        },
+        false,
+      ],
+    ]);
+  });
+
+  it('push updates w custom dependencies', async () => {
+    const routineConfig = new RoutineConfig({ id: 'some-id', projectId: 'proj-id', dependencies: DEPENDENCIES_VERSIONS.CUSTOM });
+
+    const waiting = {
+      wait: Promise.resolve(),
+      cancel: sinon.stub(),
+    };
+
+    const services = {
+      ...defaultServices,
+      feedback: sinon.stub({ ...feedback }),
+      api: {
+        routines: {
+          push: sinon.stub().resolves({ dependencies: 'db-foo', cachedDependencies: false }),
+        },
+      } as any,
+      routineConfigs: {
+        readOrThrow: sinon.stub().resolves(routineConfig),
+      } as any,
+      routinePacker: {
+        pack: sinon.stub().resolves({
+          package: 'pack-string',
+          summary: { foo: 'fooooo' },
+          packageJson: { dependencies: { foo: '1.2.3' } },
+          shrinkwrapJson: { bar: '3.2.1' },
+        }),
+      } as any,
+      internalSocket: {
+        hasSocket: sinon.stub().resolves(true),
+        disconnect: sinon.stub(),
+        waitForBuild: sinon.stub().returns(waiting),
+        addBuildId: sinon.stub(),
+      } as any,
+    };
+
+    const routines = new Routines(services, {} as any);
+    await routines.push(false);
+
+    expect(services.routineConfigs.readOrThrow.callCount).to.eql(1);
+    expect(services.routinePacker.pack.callCount).to.eql(1);
+    expect(services.internalSocket.hasSocket.callCount).to.eql(1);
+    expect(services.internalSocket.waitForBuild.callCount).to.eql(1);
+    expect(services.internalSocket.addBuildId.args).to.eql([['db-foo']]);
+    expect(waiting.cancel.callCount).to.eql(0);
+    expect(services.api.routines.push.args).to.eql([
+      [
+        'some-id',
+        {
+          name: '',
+          description: '',
+          interval: {
+            unit: 'min',
+            value: 5,
+          },
+          mocha: {
+            files: ['**/*.asrtd.js'],
+            ignore: [],
+            bail: false,
+            ui: 'bdd',
+          },
+          package: 'pack-string',
+          timeoutSec: 1,
+          dependencies: {
+            packageJson: { dependencies: { foo: '1.2.3' } },
+            shrinkwrapJson: { bar: '3.2.1' },
+          },
+        },
+        true,
+      ],
+    ]);
+  });
+
+  it('push updates w custom dependencies - cached', async () => {
+    const routineConfig = new RoutineConfig({ id: 'some-id', projectId: 'proj-id', dependencies: DEPENDENCIES_VERSIONS.CUSTOM });
+
+    const waiting = {
+      wait: Promise.resolve(),
+      cancel: sinon.stub(),
+    };
+
+    const services = {
+      ...defaultServices,
+      feedback: sinon.stub({ ...feedback }),
+      api: {
+        routines: {
+          push: sinon.stub().resolves({ dependencies: 'db-foo', cachedDependencies: true }),
+        },
+      } as any,
+      routineConfigs: {
+        readOrThrow: sinon.stub().resolves(routineConfig),
+      } as any,
+      routinePacker: {
+        pack: sinon.stub().resolves({
+          package: 'pack-string',
+          summary: { foo: 'fooooo' },
+          packageJson: { dependencies: { foo: '1.2.3' } },
+          shrinkwrapJson: { bar: '3.2.1' },
+        }),
+      } as any,
+      internalSocket: {
+        hasSocket: sinon.stub().resolves(true),
+        disconnect: sinon.stub(),
+        waitForBuild: sinon.stub().returns(waiting),
+        addBuildId: sinon.stub(),
+      } as any,
+    };
+
+    const routines = new Routines(services, {} as any);
+    await routines.push(false);
+
+    expect(services.routineConfigs.readOrThrow.callCount).to.eql(1);
+    expect(services.routinePacker.pack.callCount).to.eql(1);
+    expect(services.internalSocket.hasSocket.callCount).to.eql(1);
+    expect(services.internalSocket.waitForBuild.callCount).to.eql(1);
+    expect(services.internalSocket.addBuildId.args).to.eql([['db-foo']]);
+    expect(waiting.cancel.callCount).to.eql(1);
+    expect(services.api.routines.push.args).to.eql([
+      [
+        'some-id',
+        {
+          name: '',
+          description: '',
+          interval: {
+            unit: 'min',
+            value: 5,
+          },
+          mocha: {
+            files: ['**/*.asrtd.js'],
+            ignore: [],
+            bail: false,
+            ui: 'bdd',
+          },
+          package: 'pack-string',
+          timeoutSec: 1,
+          dependencies: {
+            packageJson: { dependencies: { foo: '1.2.3' } },
+            shrinkwrapJson: { bar: '3.2.1' },
+          },
+        },
+        true,
+      ],
+    ]);
   });
 });
 

@@ -2,6 +2,7 @@ import {
   CompletedRunRecord,
   Debug,
   DEPENDENCIES_VERSIONS,
+  isDependenciesObject,
   RoutineConfig as RoutineConfigModel,
   RoutineConfigInterface,
   RUN_FAIL_TYPE,
@@ -28,6 +29,7 @@ import { RoutineConfigs } from '../lib/services/routineConfigs';
 import { RoutinePacker } from '../lib/services/routinePacker';
 import { getColorOfStatus, shortHumanizer } from '../lib/services/utils';
 import { DURATION_CONFIG, TABLE_CONFIG } from './utils';
+import { InternalSocket } from '../lib/clients/internalSocket';
 
 // import getLogger from '../logger';
 
@@ -38,6 +40,7 @@ export interface ServicesInterface {
   localRunner: LocalRunner;
   routinePacker: RoutinePacker;
   interactions: Interactions;
+  internalSocket: InternalSocket;
 }
 
 interface GroupedPass {
@@ -298,6 +301,75 @@ export class Records {
   }
 
   /**
+   * Optionally debug and wait with socket
+   *
+   * @param {Debug} debugRun
+   * @returns {Promise<CompletedRunRecord>}
+   */
+  async debugWithSocket(debugRun: Debug): Promise<CompletedRunRecord> {
+    const { wait: runWait } = this.services.internalSocket.waitForRecord();
+
+    this.services.feedback.note('Running routine online...');
+
+    const { recordId, cachedDependencies, dependencies } = await this.services.api.routines.debugAsync(debugRun);
+    this.services.internalSocket.addRecordId(recordId);
+
+    if (!cachedDependencies && isDependenciesObject(debugRun.dependencies)) {
+      const buildSpinner = ora('Building dependencies (may take a minute) ...').start();
+
+      try {
+        const { wait } = this.services.internalSocket.waitForBuild();
+        this.services.internalSocket.addBuildId(dependencies);
+
+        const console = await wait;
+
+        if (console) {
+          buildSpinner.clear();
+          throw new Error(`Build failed: ${console}`);
+        }
+
+        buildSpinner.succeed('Built dependencies');
+      } catch (error) {
+        buildSpinner.clear();
+        throw error;
+      }
+    } else {
+      this.services.feedback.success('Using fixed dependencies');
+    }
+
+    const runSpinner = ora('Waiting for run to complete...').start();
+    await runWait;
+    const result = await this.services.api.routines.getDebugRecord(recordId);
+
+    if (!result) {
+      runSpinner.clear();
+      throw new Error('Could not find result of run');
+    }
+
+    runSpinner.succeed('Run complete');
+    return result;
+  }
+
+  /**
+   * Debug without socket connection
+   *
+   * @param {Debug} debugRun
+   * @returns {Promise<CompletedRunRecord>}
+   */
+  async debugWithoutSocket(debugRun: Debug): Promise<CompletedRunRecord> {
+    const spinner = ora('Running routine online...').start();
+
+    try {
+      const result = await this.services.api.routines.debug(debugRun);
+      spinner.succeed('Done');
+      return result;
+    } catch (error) {
+      spinner.fail('Online run failure');
+      throw error;
+    }
+  }
+
+  /**
    * Run routine once online, without replacing existing routine
    *
    * @param {RunInterface} params
@@ -326,26 +398,18 @@ export class Records {
       package: packageString,
     });
 
-    const spinner = ora('Running routine online...').start();
+    const result = (await this.services.internalSocket.hasSocket()) ? await this.debugWithSocket(debugRun) : await this.debugWithoutSocket(debugRun);
 
-    try {
-      const result = await this.services.api.routines.debug(debugRun);
-      spinner.succeed('Done');
-
-      if (result.console) {
-        this.services.feedback.note('');
-        this.services.feedback.info(chalk.bold('Console:'));
-        this.services.feedback.noIdent(result.console);
-      }
-
+    if (result.console) {
       this.services.feedback.note('');
-      this.services.feedback.note('');
-      this.services.feedback.info(chalk.bold('Results:'));
-      this.showCompleted(result, false);
-      this.services.feedback.success('Online run complete');
-    } catch (error) {
-      spinner.fail('Online run failure');
-      throw error;
+      this.services.feedback.info(chalk.bold('Console:'));
+      this.services.feedback.noIdent(result.console);
     }
+
+    this.services.feedback.note('');
+    this.services.feedback.note('');
+    this.services.feedback.info(chalk.bold('Results:'));
+    this.showCompleted(result, false);
+    this.services.internalSocket.disconnect();
   }
 }

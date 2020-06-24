@@ -1,4 +1,4 @@
-import { RoutineConfig } from '@asserted/models';
+import { DEPENDENCIES_VERSIONS, RoutineConfig } from '@asserted/models';
 import { Dependencies } from '@asserted/runner';
 import alce from 'alce';
 import * as fs from 'fs-extra';
@@ -79,6 +79,11 @@ export class RoutineConfigs {
    */
   async dependenciesWarning(): Promise<void> {
     const routine = await this.readOrThrow();
+
+    if (routine.dependencies === DEPENDENCIES_VERSIONS.CUSTOM) {
+      return;
+    }
+
     const extra = await Dependencies.findExtra(this.config.assertedDir);
 
     if (extra.length > 0) {
@@ -87,6 +92,7 @@ export class RoutineConfigs {
       this.services.feedback.warn('Extra dependencies: ');
       extra.map((_extra) => this.services.feedback.warn(`- ${_extra}`));
       this.services.feedback.warn('If not required to run the routine, put these extra dependencies in devDependencies');
+      this.services.feedback.warn('If required, upgrade to a paid plan and set "dependencies" to "custom" in routine.json');
     }
   }
 

@@ -113,4 +113,19 @@ describe('routineConfig unit tests', () => {
     const result = await routineConfigs.read(true).catch((error) => error);
     expect(result.message).to.eql('Invalid routine.json: interval.unit must be one of: min, hr, day');
   });
+
+  it('deps warning', async () => {
+    const services = { feedback: sinon.stub({ ...feedback }) };
+    const routineConfigs = new RoutineConfigs(services, { assertedDir: path.join(RESOURCE_DIR, 'extraDeps') });
+
+    await routineConfigs.dependenciesWarning();
+    expect(services.feedback.warn.args).to.eql([
+      ['Found unexpected additional dependencies in .asserted/package.json.'],
+      ['Only packages included in v1 dependencies will be available when pushed.'],
+      ['Extra dependencies: '],
+      ['- shorthash'],
+      ['If not required to run the routine, put these extra dependencies in devDependencies'],
+      ['If required, upgrade to a paid plan and set "dependencies" to "custom" in routine.json'],
+    ]);
+  });
 });

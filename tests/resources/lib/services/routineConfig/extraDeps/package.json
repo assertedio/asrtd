@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "prepare": "npx mkdirp node_modules"
+  },
+  "dependencies": {
+    "chai": "4.2.0",
+    "lodash": "^4.17.7",
+    "mocha": "8.0.1",
+    "shorthash": "0.0.2"
+  }
+}

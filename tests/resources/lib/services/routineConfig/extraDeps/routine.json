@@ -1,0 +1,18 @@
+{
+  "id": "something",
+  "projectId": "project-id",
+  "name": "",
+  "description": "",
+  "dependencies": "v1",
+  "interval": {
+    "unit": "min",
+    "value": 5
+  },
+  "mocha": {
+    "files": ["**/*.asrtd.js"],
+    "ignore": [],
+    "bail": false,
+    "ui": "bdd"
+  },
+  "timeoutSec": 1
+}

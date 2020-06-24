@@ -179,7 +179,7 @@ export class InternalSocket {
 
     const wait = new Promise<string | undefined>((resolve) => {
       const listener = ({ id, console }) => {
-        log(`Got record event: ${JSON.stringify({ id, console })}`);
+        log(`Got build event: ${JSON.stringify({ id, console })}`);
 
         if (this.builds.has(id)) {
           this.socket?.removeListener(SOCKET_EVENTS.DEP_BUILD_COMPLETE, listener);

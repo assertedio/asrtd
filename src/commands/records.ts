@@ -2,6 +2,7 @@ import {
   CompletedRunRecord,
   Debug,
   DEPENDENCIES_VERSIONS,
+  isDependenciesObject,
   RoutineConfig as RoutineConfigModel,
   RoutineConfigInterface,
   RUN_FAIL_TYPE,
@@ -302,7 +303,7 @@ export class Records {
   /**
    * Optionally debug and wait with socket
    *
-   * @param {UpdateRoutine} debugRun
+   * @param {Debug} debugRun
    * @returns {Promise<CompletedRunRecord>}
    */
   async debugWithSocket(debugRun: Debug): Promise<CompletedRunRecord> {
@@ -313,7 +314,7 @@ export class Records {
     const { recordId, cachedDependencies, dependencies } = await this.services.api.routines.debugAsync(debugRun);
     this.services.internalSocket.addRecordId(recordId);
 
-    if (debugRun.dependencies === DEPENDENCIES_VERSIONS.CUSTOM) {
+    if (isDependenciesObject(debugRun.dependencies)) {
       const buildSpinner = ora('Building dependencies (may take a minute) ...').start();
 
       try {
@@ -413,6 +414,6 @@ export class Records {
     this.services.feedback.note('');
     this.services.feedback.info(chalk.bold('Results:'));
     this.showCompleted(result, false);
-    this.services.feedback.success('Online run complete');
+    this.services.internalSocket.disconnect();
   }
 }

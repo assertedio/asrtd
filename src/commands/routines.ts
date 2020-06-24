@@ -2,6 +2,7 @@ import {
   CreateRoutine,
   CreateRoutineInterface,
   DEPENDENCIES_VERSIONS,
+  isDependenciesObject,
   OVERALL_ROUTINE_STATUS,
   Routine,
   ROUTINE_CONFIG_STATUS,
@@ -340,7 +341,7 @@ export class Routines {
    * @returns {Promise<void>}
    */
   async pushWithSocket(id: string, updateRoutine: UpdateRoutine): Promise<void> {
-    if (updateRoutine.dependencies === DEPENDENCIES_VERSIONS.CUSTOM && (await this.services.internalSocket.hasSocket())) {
+    if (isDependenciesObject(updateRoutine.dependencies) && (await this.services.internalSocket.hasSocket())) {
       const spinner = ora('Building dependencies (may take a minute) ...').start();
 
       try {

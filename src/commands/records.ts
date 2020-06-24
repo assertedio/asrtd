@@ -314,31 +314,27 @@ export class Records {
     const { recordId, cachedDependencies, dependencies } = await this.services.api.routines.debugAsync(debugRun);
     this.services.internalSocket.addRecordId(recordId);
 
-    if (isDependenciesObject(debugRun.dependencies)) {
+    if (!cachedDependencies && isDependenciesObject(debugRun.dependencies)) {
       const buildSpinner = ora('Building dependencies (may take a minute) ...').start();
 
       try {
-        const { wait, cancel } = this.services.internalSocket.waitForBuild();
+        const { wait } = this.services.internalSocket.waitForBuild();
         this.services.internalSocket.addBuildId(dependencies);
 
-        if (cachedDependencies) {
-          cancel();
-          buildSpinner.succeed('Using cached dependencies');
-        } else {
-          const console = await wait;
+        const console = await wait;
 
-          // eslint-disable-next-line max-depth
-          if (console) {
-            buildSpinner.clear();
-            throw new Error(`Build failed: ${console}`);
-          }
-
-          buildSpinner.succeed('Built dependencies');
+        if (console) {
+          buildSpinner.clear();
+          throw new Error(`Build failed: ${console}`);
         }
+
+        buildSpinner.succeed('Built dependencies');
       } catch (error) {
         buildSpinner.clear();
         throw error;
       }
+    } else {
+      this.services.feedback.success('Using fixed dependencies');
     }
 
     const runSpinner = ora('Waiting for run to complete...').start();

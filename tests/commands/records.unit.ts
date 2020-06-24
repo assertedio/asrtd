@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 
+import { Debug, DEPENDENCIES_VERSIONS } from '@asserted/models';
 import { Records } from '../../src/commands/records';
 import feedback from '../../src/lib/services/feedback';
 
@@ -11,6 +12,7 @@ const defaultServices = {
   api: {} as any,
   routineConfigs: {} as any,
   feedback: {} as any,
+  internalSocket: {} as any,
 };
 
 const curDate = new Date('2018-01-01T00:00:00.000Z');
@@ -119,20 +121,40 @@ describe('records unit tests', () => {
 
     const services = {
       ...defaultServices,
-      api: { routines: { debug: sinon.stub().resolves({ id: 'foo-id' }) } } as any,
       routineConfigs: { readOrThrow: sinon.stub().resolves(routine) } as any,
-      routinePacker: { pack: sinon.stub().resolves(packed) } as any,
       feedback: sinon.stub({ ...feedback }),
+      routinePacker: { pack: sinon.stub().resolves(packed) } as any,
+      internalSocket: {
+        hasSocket: sinon.stub().resolves(true),
+        disconnect: sinon.stub().resolves(),
+      } as any,
     };
 
     const records = new Records(services);
     const completedStub = sinon.stub(records, 'showCompleted');
+    const socketStub = sinon.stub(records, 'debugWithSocket').resolves({ id: 'foo-id' } as any);
+    const normalStub = sinon.stub(records, 'debugWithoutSocket').resolves({ id: 'foo-id' } as any);
 
     await records.debug({ bail: false }, false);
 
     expect(services.routineConfigs.readOrThrow.args).to.eql([[]]);
-    expect(services.routinePacker.pack.args).to.eql([[]]);
-    expect(services.api.routines.debug.args).to.eql([[{ mocha: routine.mocha, package: 'some-pack', dependencies: 'v1' }]]);
+    expect(services.internalSocket.hasSocket.callCount).to.eql(1);
+    expect(services.internalSocket.disconnect.callCount).to.eql(1);
+    expect(socketStub.args).to.eql([
+      [
+        {
+          dependencies: 'v1',
+          mocha: {
+            files: ['**/*.asrtd.js'],
+            ignore: [],
+            bail: false,
+            ui: 'bdd',
+          },
+          package: 'some-pack',
+        },
+      ],
+    ]);
+    expect(normalStub.args).to.eql([]);
     expect(completedStub.args).to.eql([[{ id: 'foo-id' }, false]]);
   });
 
@@ -165,28 +187,192 @@ describe('records unit tests', () => {
 
     const services = {
       ...defaultServices,
-      api: { routines: { debug: sinon.stub().resolves({ id: 'foo-id' }) } } as any,
       routineConfigs: { readOrThrow: sinon.stub().resolves(routine) } as any,
       routinePacker: { pack: sinon.stub().resolves(packed) } as any,
       feedback: sinon.stub({ ...feedback }),
+      internalSocket: {
+        hasSocket: sinon.stub().resolves(true),
+        disconnect: sinon.stub().resolves(),
+      } as any,
     };
 
     const records = new Records(services);
     const completedStub = sinon.stub(records, 'showCompleted');
+    const socketStub = sinon.stub(records, 'debugWithSocket').resolves({ id: 'foo-id' } as any);
+    const normalStub = sinon.stub(records, 'debugWithoutSocket').resolves({ id: 'foo-id' } as any);
 
     await records.debug({ bail: false }, false);
 
     expect(services.routineConfigs.readOrThrow.args).to.eql([[]]);
-    expect(services.routinePacker.pack.args).to.eql([[]]);
-    expect(services.api.routines.debug.args).to.eql([
+    expect(services.internalSocket.hasSocket.callCount).to.eql(1);
+    expect(services.internalSocket.disconnect.callCount).to.eql(1);
+    expect(socketStub.args).to.eql([
       [
         {
-          mocha: routine.mocha,
+          dependencies: {
+            packageJson: { dependencies: { foo: '1.2.3' } },
+            shrinkwrapJson: { dependencies: { foo: '3.2.1' } },
+          },
+          mocha: {
+            files: ['**/*.asrtd.js'],
+            ignore: [],
+            bail: false,
+            ui: 'bdd',
+          },
           package: 'some-pack',
-          dependencies: { packageJson: { dependencies: { foo: '1.2.3' } }, shrinkwrapJson: { dependencies: { foo: '3.2.1' } } },
         },
       ],
     ]);
+    expect(normalStub.args).to.eql([]);
     expect(completedStub.args).to.eql([[{ id: 'foo-id' }, false]]);
+  });
+
+  it('debug with socket normal', async () => {
+    const debugResult = {
+      recordId: 'foo-id',
+      cachedDependencies: true,
+      dependencies: 'v1',
+    };
+
+    const services = {
+      ...defaultServices,
+      feedback: sinon.stub({ ...feedback }),
+      api: {
+        routines: {
+          debugAsync: sinon.stub().resolves(debugResult),
+          getDebugRecord: sinon.stub().resolves({ id: 'run-rec-id' }),
+        },
+      } as any,
+      internalSocket: {
+        waitForRecord: sinon.stub().resolves({ wait: Promise.resolve() }),
+        addRecordId: sinon.stub(),
+        waitForBuild: sinon.stub().resolves({ wait: Promise.resolve() }),
+        addBuildId: sinon.stub(),
+      } as any,
+    };
+
+    const debugRun = new Debug({
+      dependencies: DEPENDENCIES_VERSIONS.V1,
+      mocha: {
+        files: ['**/*.asrtd.js'],
+        ignore: [],
+        bail: false,
+        ui: 'bdd' as any,
+      },
+      package: 'some-pack',
+    });
+
+    const records = new Records(services);
+
+    const result = await records.debugWithSocket(debugRun);
+
+    expect(result).to.eql({ id: 'run-rec-id' });
+    expect(services.internalSocket.waitForRecord.args).to.eql([[]]);
+    expect(services.api.routines.debugAsync.args).to.eql([[debugRun]]);
+    expect(services.internalSocket.addRecordId.args).to.eql([['foo-id']]);
+    expect(services.internalSocket.waitForBuild.args).to.eql([]);
+    expect(services.internalSocket.addBuildId.args).to.eql([]);
+    expect(services.api.routines.getDebugRecord.args).to.eql([['foo-id']]);
+  });
+
+  it('debug with socket custom cached', async () => {
+    const debugResult = {
+      recordId: 'foo-id',
+      cachedDependencies: true,
+      dependencies: 'dep-id',
+    };
+
+    const services = {
+      ...defaultServices,
+      feedback: sinon.stub({ ...feedback }),
+      api: {
+        routines: {
+          debugAsync: sinon.stub().resolves(debugResult),
+          getDebugRecord: sinon.stub().resolves({ id: 'run-rec-id' }),
+        },
+      } as any,
+      internalSocket: {
+        waitForRecord: sinon.stub().resolves({ wait: Promise.resolve() }),
+        addRecordId: sinon.stub(),
+        waitForBuild: sinon.stub().resolves({ wait: Promise.resolve() }),
+        addBuildId: sinon.stub(),
+      } as any,
+    };
+
+    const debugRun = new Debug({
+      dependencies: {
+        packageJson: { dependencies: { foo: '1.2.3' } },
+        shrinkwrapJson: { dependencies: { foo: '3.2.1' } },
+      },
+      mocha: {
+        files: ['**/*.asrtd.js'],
+        ignore: [],
+        bail: false,
+        ui: 'bdd' as any,
+      },
+      package: 'some-pack',
+    });
+
+    const records = new Records(services);
+
+    const result = await records.debugWithSocket(debugRun);
+
+    expect(result).to.eql({ id: 'run-rec-id' });
+    expect(services.internalSocket.waitForRecord.args).to.eql([[]]);
+    expect(services.api.routines.debugAsync.args).to.eql([[debugRun]]);
+    expect(services.internalSocket.addRecordId.args).to.eql([['foo-id']]);
+    expect(services.internalSocket.waitForBuild.args).to.eql([]);
+    expect(services.internalSocket.addBuildId.args).to.eql([]);
+    expect(services.api.routines.getDebugRecord.args).to.eql([['foo-id']]);
+  });
+
+  it('debug with socket custom not cached', async () => {
+    const debugResult = {
+      recordId: 'foo-id',
+      cachedDependencies: false,
+      dependencies: 'dep-id',
+    };
+
+    const services = {
+      ...defaultServices,
+      feedback: sinon.stub({ ...feedback }),
+      api: {
+        routines: {
+          debugAsync: sinon.stub().resolves(debugResult),
+          getDebugRecord: sinon.stub().resolves({ id: 'run-rec-id' }),
+        },
+      } as any,
+      internalSocket: {
+        waitForRecord: sinon.stub().resolves({ wait: Promise.resolve() }),
+        addRecordId: sinon.stub(),
+        waitForBuild: sinon.stub().resolves({ wait: Promise.resolve() }),
+        addBuildId: sinon.stub(),
+      } as any,
+    };
+
+    const debugRun = new Debug({
+      dependencies: {
+        packageJson: { dependencies: { foo: '1.2.3' } },
+        shrinkwrapJson: { dependencies: { foo: '3.2.1' } },
+      },
+      mocha: {
+        files: ['**/*.asrtd.js'],
+        ignore: [],
+        bail: false,
+        ui: 'bdd' as any,
+      },
+      package: 'some-pack',
+    });
+
+    const records = new Records(services);
+    const result = await records.debugWithSocket(debugRun);
+
+    expect(result).to.eql({ id: 'run-rec-id' });
+    expect(services.internalSocket.waitForRecord.args).to.eql([[]]);
+    expect(services.api.routines.debugAsync.args).to.eql([[debugRun]]);
+    expect(services.internalSocket.addRecordId.args).to.eql([['foo-id']]);
+    expect(services.internalSocket.waitForBuild.args).to.eql([[]]);
+    expect(services.internalSocket.addBuildId.args).to.eql([['dep-id']]);
+    expect(services.api.routines.getDebugRecord.args).to.eql([['foo-id']]);
   });
 });

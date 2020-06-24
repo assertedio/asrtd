@@ -314,10 +314,10 @@ export class Records {
     const { recordId, cachedDependencies, dependencies } = await this.services.api.routines.debugAsync(debugRun);
     this.services.internalSocket.addRecordId(recordId);
 
-    if (!cachedDependencies && isDependenciesObject(debugRun.dependencies)) {
-      const buildSpinner = ora('Building dependencies (may take a minute) ...').start();
+    if (isDependenciesObject(debugRun.dependencies)) {
+      if (!cachedDependencies) {
+        const buildSpinner = ora('Building custom dependencies (may take a minute) ...').start();
 
-      try {
         const { wait } = this.services.internalSocket.waitForBuild();
         this.services.internalSocket.addBuildId(dependencies);
 
@@ -328,10 +328,9 @@ export class Records {
           throw new Error(`Build failed: ${console}`);
         }
 
-        buildSpinner.succeed('Built dependencies');
-      } catch (error) {
-        buildSpinner.clear();
-        throw error;
+        buildSpinner.succeed('Built custom dependencies');
+      } else {
+        this.services.feedback.success('Using cached custom dependencies');
       }
     } else {
       this.services.feedback.success('Using fixed dependencies');

@@ -342,7 +342,7 @@ export class Routines {
    */
   async pushWithSocket(id: string, updateRoutine: UpdateRoutine): Promise<void> {
     if (isDependenciesObject(updateRoutine.dependencies) && (await this.services.internalSocket.hasSocket())) {
-      const spinner = ora('Building dependencies (may take a minute) ...').start();
+      const spinner = ora('Building custom dependencies (may take a minute) ...').start();
 
       try {
         const { wait, cancel } = this.services.internalSocket.waitForBuild();
@@ -351,7 +351,7 @@ export class Routines {
 
         if (cachedDependencies) {
           cancel();
-          spinner.succeed('Using cached dependencies');
+          spinner.succeed('Using cached custom dependencies');
         } else {
           const console = await wait;
 
@@ -361,13 +361,14 @@ export class Routines {
             throw new Error(`Build failed: ${console}`);
           }
 
-          spinner.succeed('Built dependencies');
+          spinner.succeed('Built custom dependencies');
         }
       } catch (error) {
         spinner.clear();
         throw error;
       }
     } else {
+      this.services.feedback.success('Using fixed dependencies');
       await this.services.api.routines.push(id, updateRoutine, false);
     }
   }

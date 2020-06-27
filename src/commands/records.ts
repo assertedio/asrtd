@@ -15,7 +15,7 @@ import {
 import chalk from 'chalk';
 import { capitalCase } from 'change-case';
 import figures from 'figures';
-import { last } from 'lodash';
+import { last, isNumber } from 'lodash';
 import { DateTime } from 'luxon';
 import ora from 'ora';
 import { table } from 'table';
@@ -195,7 +195,7 @@ export class Records {
       headers,
       ...results.map(({ duration, fullTitle, error }) => [
         fullTitle || '',
-        `${duration} ms`,
+        isNumber(duration) ? `${duration} ms` : ' - ',
         error ? chalk.red(figures.cross) : chalk.green(figures.tick),
       ]),
     ];

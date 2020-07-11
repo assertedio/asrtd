@@ -31,7 +31,7 @@ export class GlobalConfig {
    * @returns {string | null}
    */
   getUpdateVersion(): string | null {
-    return this.services.conf.get(KEYS.UPDATE_LOG_VERSION) || null;
+    return (this.services.conf.get(KEYS.UPDATE_LOG_VERSION) as string) || null;
   }
 
   /**
@@ -62,7 +62,7 @@ export class GlobalConfig {
     const isoDate = this.services.conf.get(KEYS.UPDATE_LOG_DATE);
 
     if (isoDate) {
-      const parsedDate = DateTime.fromISO(isoDate);
+      const parsedDate = DateTime.fromISO(isoDate as string);
 
       if (!parsedDate.isValid) {
         this.clearUpdateLogDate();
@@ -102,7 +102,7 @@ export class GlobalConfig {
    * @returns {string}
    */
   getApiKey(): string | null {
-    return this.services.conf.get(KEYS.API_KEY) || null;
+    return (this.services.conf.get(KEYS.API_KEY) as string) || null;
   }
 
   /**

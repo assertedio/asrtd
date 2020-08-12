@@ -138,7 +138,7 @@
     "url": "git+https://github.com/asserted/asrtd.git"
   },
   "scripts": {
-    "beta": "npm version prerelease && npm publish",
+    "beta": "npm version prerelease && npm publish --tag beta",
     "build": "rm -rf ./dist && tsc -p tsconfig.build.json && sed -i 's/\"files\":/\"_files\":/' dist/package.json && npm run build-templates",
     "build-templates": "cp -rf ./src/commands/templates ./dist/src/commands",
     "commit": "git-cz",

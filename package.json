@@ -27,7 +27,7 @@
     "bluebird": "^3.7.2",
     "chalk": "^4.1.0",
     "change-case": "^4.1.1",
-    "class-validator": "^0.12.2",
+    "class-validator": "^0.14.0",
     "commander": "^5.1.0",
     "conf": "^7.0.1",
     "debug": "^4.1.1",
